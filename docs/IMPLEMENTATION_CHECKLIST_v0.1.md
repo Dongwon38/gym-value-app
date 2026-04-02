@@ -90,7 +90,7 @@
 - Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되었다.
 
 ### 아직 미완료인 상태
-- assisted check-in wiring / fallback polish / release-ready native smoke QA가 남아 있다.
+- native geofence/notification wiring / fallback polish / release-ready native smoke QA가 남아 있다.
 
 ---
 
@@ -153,10 +153,9 @@
 
 아래 작업들은 현재 저장소 상태에서 바로 이어서 진행할 수 있는 남은 우선 작업들이다.
 
-1. `AUTO-02` Prompt persistence와 active visit orchestration
-2. `AUTO-03` Geofence/notification wiring
-3. `AUTO-04` Assisted flow QA와 fallback polish
-4. `DOC-03` 문서 위생 후속 정리
+1. `AUTO-03` Geofence/notification wiring
+2. `AUTO-04` Assisted flow QA와 fallback polish
+3. `DOC-03` 문서 위생 후속 정리
 
 ---
 
@@ -388,7 +387,7 @@
 - Out of scope: 실제 geofence 라이브러리 연결
 
 ### `AUTO-02` Prompt persistence와 active visit orchestration
-- Status: `todo`
+- Status: `done`
 - Goal: assisted flow에 필요한 application layer orchestration을 준비한다.
 - Depends on: `AUTO-01`
 - Scope: `location_prompts` repository/use case, `startVisitFromPrompt`, `completeActiveVisit`, session restore skeleton

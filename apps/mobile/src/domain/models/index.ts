@@ -16,6 +16,8 @@ export {
   feeItemTaxModes,
 } from './FeeItem';
 export type { Gym } from './Gym';
+export type { LocationPrompt, LocationPromptType } from './LocationPrompt';
+export { locationPromptTypes } from './LocationPrompt';
 export type {
   Visit,
   VisitConfidence,

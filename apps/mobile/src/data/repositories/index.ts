@@ -23,6 +23,20 @@ export {
   updateFeeItem,
 } from './FeeItemRepository';
 export type { FeeItemRow, FeeItemWriteInput } from './FeeItemRepository';
+export {
+  createLocationPrompt,
+  dismissLocationPrompt,
+  getLatestLocationPrompt,
+  getLocationPrompt,
+  listLocationPrompts,
+  mapLocationPromptRowToModel,
+  markLocationPromptAccepted,
+} from './LocationPromptRepository';
+export type {
+  ListLocationPromptOptions,
+  LocationPromptRow,
+  LocationPromptWriteInput,
+} from './LocationPromptRepository';
 export { getActiveVisit, listVisits, mapVisitRowToModel } from './VisitRepository';
 export { cancelVisit, createVisit, updateVisit } from './VisitRepository';
 export type { VisitRow, VisitWriteInput } from './VisitRepository';

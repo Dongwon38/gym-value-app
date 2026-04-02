@@ -15,6 +15,7 @@ import {
   feeItemCategories,
   feeItemTaxModes,
   homePrimaryMetrics,
+  locationPromptTypes,
   visitConfidences,
   visitSources,
   visitStatuses,
@@ -46,6 +47,12 @@ describe('domain constants', () => {
     ]);
     expect(feeItemTaxModes).toEqual(['inherit_default', 'custom']);
     expect(homePrimaryMetrics).toEqual(['cost_per_visit']);
+    expect(locationPromptTypes).toEqual([
+      'enter',
+      'exit',
+      'checkin_suggested',
+      'checkout_suggested',
+    ]);
     expect(dashboardRangeTypes).toEqual([
       'current_year',
       'current_month',
