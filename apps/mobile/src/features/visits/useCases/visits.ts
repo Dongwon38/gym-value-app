@@ -1,5 +1,5 @@
 import type { Visit, VisitStatus } from '../../../domain/models';
-import { listVisits } from '../../../data/repositories';
+import { getActiveVisit, listVisits } from '../../../data/repositories';
 
 const visitStatusLabels: Record<VisitStatus, string> = {
   active: 'Active',
@@ -17,6 +17,10 @@ function formatTime(date: Date) {
 
 export async function getVisits() {
   return listVisits();
+}
+
+export async function getCurrentActiveVisit() {
+  return getActiveVisit();
 }
 
 export function formatVisitStatus(status: VisitStatus) {

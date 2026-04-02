@@ -82,9 +82,10 @@
 - fee item inactive/delete path와 active-first refresh가 연결되었고, inactive row는 history 용도로 계속 보이도록 정책이 고정되었다.
 - Visits 탭에 `visits` read path, cancelled 제외 기본 리스트, newest-first list shell, empty state, add CTA entry point, refresh hook가 연결되었다.
 - `VisitRepository` create/update path와 Visits add/edit form이 연결되었고, completed visit의 `duration_minutes`가 `started_at/ended_at`로부터 자동 계산된다.
+- visit cancel path가 `cancelled` soft delete로 연결되었고, active visit query와 duplicate active guard가 add/edit flow에 연결되었다.
 
 ### 아직 미완료인 상태
-- visit cancel/active-guard path, settings repositories와 남은 CRUD 저장 플로우가 없다.
+- settings repositories와 남은 settings CRUD 저장 플로우가 없다.
 - Home KPI와 calculation layer가 없다.
 
 ---
@@ -148,11 +149,11 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `VISIT-03` Cancel flow, duplicate active guard, list refresh
-2. `SET-01` Minimal settings screen과 upsert
-3. `KPI-01` Fee occurrence expansion과 tax calculator
-4. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
-5. `KPI-03` Home screen KPI cards와 empty/error states
+1. `SET-01` Minimal settings screen과 upsert
+2. `KPI-01` Fee occurrence expansion과 tax calculator
+3. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
+4. `KPI-03` Home screen KPI cards와 empty/error states
+5. `KPI-04` Manual MVP exit QA pass
 
 ---
 
@@ -321,12 +322,12 @@
 - Out of scope: active visit timer, auto check-in
 
 ### `VISIT-03` Cancel flow, duplicate active guard, list refresh
-- Status: `todo`
+- Status: `done`
 - Goal: visit 삭제 정책과 active visit 무결성을 고정한다.
 - Depends on: `VISIT-02`
 - Scope: UI delete action, 내부 `cancelled` 처리, single active visit guard, update after write
 - Acceptance: visit 삭제는 `cancelled`로 처리되고, 중복 active visit 생성 시도가 차단된다.
-- Verification: cancelled visit는 기본 리스트/집계에서 빠지고 partial unique guard가 동작한다.
+- Verification: `cancelVisit` unit test와 `VisitRepository` active/cancel test로 soft delete와 active query를 확인하고, `saveVisit` test에서 duplicate active guard를 확인하며, `VisitsScreen` test에서 delete action과 active summary card가 렌더링된다.
 - Out of scope: hard delete, overlap conflict resolution UX
 
 ### `SET-01` Minimal settings screen과 upsert

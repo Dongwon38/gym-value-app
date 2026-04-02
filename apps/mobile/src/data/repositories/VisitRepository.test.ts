@@ -3,7 +3,13 @@ jest.mock('../db', () => ({
 }));
 
 import { getDatabase } from '../db';
-import { createVisit, listVisits, updateVisit } from './VisitRepository';
+import {
+  cancelVisit,
+  createVisit,
+  getActiveVisit,
+  listVisits,
+  updateVisit,
+} from './VisitRepository';
 
 function createVisitRow(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -159,5 +165,67 @@ describe('VisitRepository', () => {
       expect.not.stringContaining("WHERE status != 'cancelled'"),
     );
     expect(visits[0]?.status).toBe('cancelled');
+  });
+
+  it('returns the current active visit when one exists', async () => {
+    const executeAsync = jest.fn().mockResolvedValue({
+      rows: {
+        _array: [
+          createVisitRow({
+            duration_minutes: null,
+            ended_at: null,
+            id: 'visit_active',
+            status: 'active',
+          }),
+        ],
+        item: (index: number) =>
+          index === 0
+            ? createVisitRow({
+                duration_minutes: null,
+                ended_at: null,
+                id: 'visit_active',
+                status: 'active',
+              })
+            : undefined,
+        length: 1,
+      },
+    });
+
+    (getDatabase as jest.Mock).mockReturnValue({ executeAsync });
+
+    const activeVisit = await getActiveVisit();
+
+    expect(executeAsync).toHaveBeenCalledWith(
+      expect.stringContaining("WHERE status = 'active'"),
+    );
+    expect(activeVisit?.id).toBe('visit_active');
+    expect(activeVisit?.status).toBe('active');
+  });
+
+  it('marks a visit as cancelled instead of deleting the row', async () => {
+    const txExecuteAsync = jest
+      .fn()
+      .mockResolvedValueOnce({ rowsAffected: 1 })
+      .mockResolvedValueOnce({
+        rows: {
+          item: () => createVisitRow({ id: 'visit_1', status: 'cancelled' }),
+        },
+      });
+    const transaction = jest.fn(async callback =>
+      callback({
+        executeAsync: txExecuteAsync,
+      }),
+    );
+
+    (getDatabase as jest.Mock).mockReturnValue({ transaction });
+
+    const savedVisit = await cancelVisit('visit_1');
+
+    expect(txExecuteAsync).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining("status = 'cancelled'"),
+      [expect.any(String), 'visit_1'],
+    );
+    expect(savedVisit.status).toBe('cancelled');
   });
 });

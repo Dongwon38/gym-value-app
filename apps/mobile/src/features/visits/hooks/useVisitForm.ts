@@ -4,6 +4,7 @@ import type { VisitFormValues } from '../../../domain/forms';
 import type { Gym, Visit } from '../../../domain/models';
 import { getValidationErrors, validateVisitForm } from '../../../utils/validation';
 import { getPrimaryGym } from '../../gym/useCases/primaryGym';
+import { getCurrentActiveVisit } from '../useCases/visits';
 import {
   createNewVisitFormValues,
   mapVisitToFormValues,
@@ -19,6 +20,7 @@ type VisitSaveState = 'idle' | 'saving' | 'success' | 'error';
 
 export function useVisitForm() {
   const [primaryGym, setPrimaryGym] = useState<Gym | null>(null);
+  const [activeVisit, setActiveVisit] = useState<Visit | null>(null);
   const [editorMode, setEditorMode] = useState<VisitEditorMode>('closed');
   const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
   const [formValues, setFormValues] = useState<VisitFormValues>(() =>
@@ -31,15 +33,19 @@ export function useVisitForm() {
   useEffect(() => {
     let isMounted = true;
 
-    async function loadPrimaryGymForVisits() {
+    async function loadVisitContext() {
       try {
-        const gym = await getPrimaryGym();
+        const [gym, currentActiveVisit] = await Promise.all([
+          getPrimaryGym(),
+          getCurrentActiveVisit(),
+        ]);
 
         if (!isMounted) {
           return;
         }
 
         setPrimaryGym(gym);
+        setActiveVisit(currentActiveVisit);
         if (!editingVisit) {
           setFormValues(createNewVisitFormValues(gym?.id ?? ''));
         }
@@ -49,10 +55,11 @@ export function useVisitForm() {
         }
 
         setPrimaryGym(null);
+        setActiveVisit(null);
       }
     }
 
-    loadPrimaryGymForVisits();
+    loadVisitContext();
 
     return () => {
       isMounted = false;
@@ -60,25 +67,42 @@ export function useVisitForm() {
   }, [editingVisit]);
 
   const effectiveGymId = editingVisit?.gymId ?? primaryGym?.id ?? '';
+  const existingActiveVisits =
+    formValues.status === 'active' &&
+    activeVisit &&
+    activeVisit.id !== editingVisit?.id
+      ? 1
+      : 0;
   const validationResult = useMemo(
     () =>
       validateVisitForm({
         ...formValues,
         gymId: effectiveGymId,
-        status: 'completed',
-      }),
-    [effectiveGymId, formValues],
+      }, { existingActiveVisits }),
+    [effectiveGymId, existingActiveVisits, formValues],
   );
   const errors = hasReviewed ? getValidationErrors(validationResult) : [];
-  const derivedDurationMinutes = deriveCompletedVisitDurationMinutes(formValues);
+  const derivedDurationMinutes =
+    formValues.status === 'completed'
+      ? deriveCompletedVisitDurationMinutes(formValues)
+      : null;
 
   return {
+    activeVisit,
     derivedDurationMinutes,
     editingVisit,
     editorMode,
     errors,
     formValues,
     hasPrimaryGym: primaryGym !== null,
+    markVisitCancelled: (visitId: string) => {
+      setActiveVisit(currentActiveVisit =>
+        currentActiveVisit?.id === visitId ? null : currentActiveVisit,
+      );
+      setEditingVisit(currentEditingVisit =>
+        currentEditingVisit?.id === visitId ? null : currentEditingVisit,
+      );
+    },
     primaryGym,
     save: async () => {
       setHasReviewed(true);
@@ -105,6 +129,17 @@ export function useVisitForm() {
         });
 
         setEditingVisit(savedVisit);
+        setActiveVisit(currentActiveVisit => {
+          if (savedVisit.status === 'active') {
+            return savedVisit;
+          }
+
+          if (currentActiveVisit?.id === savedVisit.id) {
+            return null;
+          }
+
+          return currentActiveVisit;
+        });
         setFormValues(mapVisitToFormValues(savedVisit));
         setEditorMode('edit');
         setSaveState('success');
@@ -154,6 +189,7 @@ export function useVisitForm() {
     },
     closeEditor: () => {
       setEditorMode('closed');
+      setEditingVisit(null);
       setHasReviewed(false);
       setSaveState('idle');
       setSaveFeedback(null);

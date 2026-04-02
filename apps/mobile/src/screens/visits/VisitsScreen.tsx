@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import type { Visit } from '../../domain/models';
 import { VisitEditorCard } from '../../features/visits/components/VisitEditorCard';
 import { useVisitForm } from '../../features/visits/hooks/useVisitForm';
 import { useVisits } from '../../features/visits/hooks/useVisits';
+import { cancelVisit } from '../../features/visits/useCases/cancelVisit';
 import {
   formatVisitDuration,
   formatVisitStatus,
@@ -12,16 +14,21 @@ import {
 import { Card, EmptyState, PrimaryButton, ScreenContainer } from '../../ui/components';
 import { useAppTheme } from '../../ui/theme';
 
+type CancelState = 'idle' | 'saving' | 'success' | 'error';
+
 export function VisitsScreen() {
   const theme = useAppTheme();
   const { activeCount, loadError, loadState, reload, visits } = useVisits();
   const {
+    activeVisit,
     closeEditor,
     derivedDurationMinutes,
+    editingVisit,
     editorMode,
     errors,
     formValues,
     hasPrimaryGym,
+    markVisitCancelled,
     primaryGym,
     save,
     saveFeedback,
@@ -30,26 +37,73 @@ export function VisitsScreen() {
     startCreate,
     startEdit,
   } = useVisitForm();
+  const [cancelState, setCancelState] = useState<CancelState>('idle');
+  const [cancelFeedback, setCancelFeedback] = useState<string | null>(null);
+  const [cancellingVisitId, setCancellingVisitId] = useState<string | null>(null);
   const totalCount = visits.length;
+
+  async function handleCancelVisit(visit: Visit) {
+    setCancelState('saving');
+    setCancelFeedback(null);
+    setCancellingVisitId(visit.id);
+
+    try {
+      await cancelVisit(visit);
+      markVisitCancelled(visit.id);
+
+      if (editingVisit?.id === visit.id) {
+        closeEditor();
+      }
+
+      await reload();
+      setCancelState('success');
+      setCancelFeedback('Visit cancelled. Cancelled rows no longer appear in the default list.');
+    } catch (error) {
+      setCancelState('error');
+      setCancelFeedback(
+        error instanceof Error ? error.message : 'Unknown visit cancel error.',
+      );
+    } finally {
+      setCancellingVisitId(null);
+    }
+  }
 
   return (
     <ScreenContainer
-      description="Manual visit records now load from SQLite and can be created or edited from this screen."
+      description="Manual visit records now load from SQLite, allow completed or active saves, and support soft cancel from this screen."
       eyebrow="Visits"
       scroll
       title="Manual visit tracking will live here.">
       <Card
-        subtitle="Read path, add/edit form wiring, and refresh are live. VISIT-03 will add cancel and active-visit rules to the same surface."
+        subtitle="Read path, add/edit form wiring, duplicate active guard, and cancelled row filtering are live on the same surface."
         title="Visit feed overview">
         <Text style={[styles.note, { color: theme.colors.textSecondary }]}>
           {totalCount === 0
-            ? 'No saved visits yet. Open the editor below to create the first completed visit for your primary gym.'
+            ? 'No saved visits yet. Open the editor below to create the first completed or active visit for your primary gym.'
             : `${totalCount} visit${totalCount === 1 ? '' : 's'} loaded. ${activeCount} active and ${totalCount - activeCount} completed.`}
         </Text>
+        {cancelFeedback ? (
+          <Text
+            style={[
+              styles.feedback,
+              {
+                color:
+                  cancelState === 'error'
+                    ? theme.colors.danger
+                    : cancelState === 'success'
+                      ? theme.colors.accent
+                      : theme.colors.textSecondary,
+              },
+            ]}>
+            {cancelFeedback}
+          </Text>
+        ) : null}
         <View style={[styles.actions, { marginTop: theme.spacing.lg }]}>
           <PrimaryButton
             label="Add Visit"
             onPress={() => {
+              setCancelState('idle');
+              setCancelFeedback(null);
               startCreate();
             }}
           />
@@ -69,6 +123,19 @@ export function VisitsScreen() {
         </View>
       </Card>
 
+      {activeVisit ? (
+        <Card
+          subtitle={formatVisitWindow(activeVisit)}
+          title="Current active visit">
+          <Text style={[styles.amount, { color: theme.colors.textPrimary }]}>
+            {formatVisitDuration(activeVisit.durationMinutes)}
+          </Text>
+          <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
+            Only one active visit is allowed at a time. Edit this row to complete it or cancel it from the list below.
+          </Text>
+        </Card>
+      ) : null}
+
       {editorMode !== 'closed' ? (
         <VisitEditorCard
           derivedDurationMinutes={derivedDurationMinutes}
@@ -80,6 +147,8 @@ export function VisitsScreen() {
             const savedVisit = await save();
 
             if (savedVisit) {
+              setCancelState('idle');
+              setCancelFeedback(null);
               await reload();
             }
           }}
@@ -122,7 +191,7 @@ export function VisitsScreen() {
       {loadState === 'ready' && visits.length === 0 ? (
         <EmptyState
           actionLabel="Add Visit"
-          body="No saved visits exist yet. This screen now saves completed manual visits and derives duration from the entered times."
+          body="No saved visits exist yet. This screen now saves completed and active manual visits, enforces a single active visit, and hides cancelled rows from the default feed."
           onActionPress={() => {
             startCreate();
           }}
@@ -164,9 +233,41 @@ export function VisitsScreen() {
                 <PrimaryButton
                   label="Edit Visit"
                   onPress={() => {
+                    setCancelState('idle');
+                    setCancelFeedback(null);
                     startEdit(visit);
                   }}
                 />
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={cancellingVisitId === visit.id}
+                  onPress={() => {
+                    handleCancelVisit(visit);
+                  }}
+                  style={({ pressed }) => [
+                    styles.inlineAction,
+                    {
+                      opacity:
+                        cancellingVisitId === visit.id
+                          ? 0.5
+                          : pressed
+                            ? 0.7
+                            : 1,
+                    },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.inlineActionLabel,
+                      {
+                        color:
+                          cancellingVisitId === visit.id
+                            ? theme.colors.textMuted
+                            : theme.colors.danger,
+                      },
+                    ]}>
+                    {cancellingVisitId === visit.id ? 'Cancelling...' : 'Delete Visit'}
+                  </Text>
+                </Pressable>
               </View>
             </Card>
           ))
@@ -186,6 +287,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     lineHeight: 30,
+  },
+  feedback: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 22,
+    marginTop: 12,
   },
   inlineAction: {
     alignSelf: 'flex-start',

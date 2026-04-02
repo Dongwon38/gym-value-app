@@ -81,9 +81,10 @@
 - Costs 탭에 fee item inactive/delete path와 inactive history 표시 정책이 연결되어 있다.
 - Visits 탭에 visit read path, cancelled 제외 기본 리스트, newest-first list shell, empty state, add CTA entry point가 연결되어 있다.
 - Visits 탭에 completed visit add/edit form과 duration derivation이 연결되어 있다.
+- Visits 탭에 cancel flow, active visit query, duplicate active guard가 연결되어 있다.
 
 아직 미완료인 상태:
-- visit cancel/active guard path / settings repositories와 remaining CRUD
+- settings repositories와 remaining CRUD
 - Home KPI / calculation layer
 
 ---
@@ -622,8 +623,8 @@ form 입력에 대한 기본 validation 구현
 - [x] Edit Visit UI 구현
 - [x] createVisit 연결
 - [x] updateVisit 연결
-- [ ] delete/cancelVisit 연결
-- [ ] active visit query 연결
+- [x] delete/cancelVisit 연결
+- [x] active visit query 연결
 - [x] 빈 상태 UI 구현
 
 ---
@@ -787,7 +788,7 @@ Phase 1 종료 시 아래가 가능해야 한다.
 - [x] `COST-03` Inactive/delete flow와 list refresh
 - [x] `VISIT-01` Visits list와 empty state
 - [x] `VISIT-02` Add/Edit Visit form과 duration derivation
-- [ ] `VISIT-03` Cancel flow, duplicate active guard, list refresh
+- [x] `VISIT-03` Cancel flow, duplicate active guard, list refresh
 - [ ] `SET-01` Minimal settings screen과 upsert
 
 ---

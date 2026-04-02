@@ -1,4 +1,4 @@
-import { createVisit, updateVisit } from '../../../data/repositories';
+import { createVisit, getActiveVisit, updateVisit } from '../../../data/repositories';
 import type { VisitFormValues } from '../../../domain/forms';
 import type { Visit } from '../../../domain/models';
 import {
@@ -37,38 +37,73 @@ export async function saveVisit(
   values: VisitFormValues,
   { existingVisit, gymId }: SaveVisitOptions,
 ) {
-  const completedValues = {
+  const conflictingActiveVisit =
+    values.status === 'active' ? await getActiveVisit() : null;
+  const normalizedValues = {
     ...values,
     gymId,
-    status: 'completed' as const,
   };
-  const validationResult = validateVisitForm(completedValues);
+  const validationResult = validateVisitForm(normalizedValues, {
+    existingActiveVisits:
+      conflictingActiveVisit &&
+      conflictingActiveVisit.id !== existingVisit?.id
+        ? 1
+        : 0,
+  });
   const errors = getValidationErrors(validationResult);
 
   if (errors.length > 0) {
     throw new VisitFormValidationError(errors);
   }
 
-  const startedAtDate = buildLocalDateTime(completedValues.date, completedValues.startedAt);
-  const endedAtDate = buildLocalDateTime(completedValues.date, completedValues.endedAt);
-  const durationMinutes = deriveCompletedVisitDurationMinutes(completedValues);
+  const startedAtDate = buildLocalDateTime(
+    normalizedValues.date,
+    normalizedValues.startedAt,
+  );
 
-  if (!startedAtDate || !endedAtDate || durationMinutes === null) {
+  if (!startedAtDate) {
+    throw new Error('Visit start time could not be derived after validation.');
+  }
+
+  if (normalizedValues.status === 'active') {
+    const activeInput = {
+      durationMinutes: null,
+      endedAt: null,
+      gymId,
+      notes: normalizedValues.notes.trim() || null,
+      startedAt: startedAtDate.toISOString(),
+      status: 'active' as const,
+    };
+
+    if (existingVisit?.id) {
+      return updateVisit(existingVisit.id, activeInput);
+    }
+
+    return createVisit(activeInput);
+  }
+
+  const endedAtDate = buildLocalDateTime(
+    normalizedValues.date,
+    normalizedValues.endedAt,
+  );
+  const durationMinutes = deriveCompletedVisitDurationMinutes(normalizedValues);
+
+  if (!endedAtDate || durationMinutes === null) {
     throw new Error('Visit times could not be derived after validation.');
   }
 
-  const input = {
+  const completedInput = {
     durationMinutes,
     endedAt: endedAtDate.toISOString(),
     gymId,
-    notes: completedValues.notes.trim() || null,
+    notes: normalizedValues.notes.trim() || null,
     startedAt: startedAtDate.toISOString(),
     status: 'completed' as const,
   };
 
   if (existingVisit?.id) {
-    return updateVisit(existingVisit.id, input);
+    return updateVisit(existingVisit.id, completedInput);
   }
 
-  return createVisit(input);
+  return createVisit(completedInput);
 }

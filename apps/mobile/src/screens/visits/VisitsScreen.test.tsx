@@ -6,9 +6,17 @@ jest.mock('../../features/visits/hooks/useVisitForm', () => ({
   useVisitForm: jest.fn(),
 }));
 
+jest.mock('../../features/visits/useCases/cancelVisit', () => ({
+  cancelVisit: jest.fn(),
+}));
+
 jest.mock('../../features/visits/useCases/visits', () => ({
-  formatVisitDuration: jest.fn(() => '1 hr'),
-  formatVisitStatus: jest.fn(() => 'Completed'),
+  formatVisitDuration: jest.fn((durationMinutes: number | null) =>
+    durationMinutes === null ? 'In progress' : '1 hr',
+  ),
+  formatVisitStatus: jest.fn((status: 'active' | 'completed') =>
+    status === 'active' ? 'Active' : 'Completed',
+  ),
   formatVisitWindow: jest.fn(() => '2026-04-02 10:00 to 11:00'),
 }));
 
@@ -53,6 +61,7 @@ describe('VisitsScreen', () => {
 
   function mockClosedEditor() {
     (useVisitForm as jest.Mock).mockReturnValue({
+      activeVisit: null,
       closeEditor: jest.fn(),
       derivedDurationMinutes: null,
       editingVisit: null,
@@ -60,6 +69,7 @@ describe('VisitsScreen', () => {
       errors: [],
       formValues: null,
       hasPrimaryGym: true,
+      markVisitCancelled: jest.fn(),
       primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
       save: jest.fn(),
       saveFeedback: null,
@@ -112,5 +122,57 @@ describe('VisitsScreen', () => {
     expect(JSON.stringify(renderer!.toJSON())).toContain('Completed');
     expect(JSON.stringify(renderer!.toJSON())).toContain('1 hr');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Edit Visit');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Delete Visit');
+  });
+
+  it('renders the active visit summary card when one exists', async () => {
+    (useVisitForm as jest.Mock).mockReturnValue({
+      activeVisit: createVisit({
+        durationMinutes: null,
+        endedAt: null,
+        id: 'visit_active',
+        status: 'active',
+      }),
+      closeEditor: jest.fn(),
+      derivedDurationMinutes: null,
+      editingVisit: null,
+      editorMode: 'closed',
+      errors: [],
+      formValues: null,
+      hasPrimaryGym: true,
+      markVisitCancelled: jest.fn(),
+      primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
+      save: jest.fn(),
+      saveFeedback: null,
+      saveState: 'idle',
+      setFieldValue: jest.fn(),
+      startCreate: jest.fn(),
+      startEdit: jest.fn(),
+    });
+    (useVisits as jest.Mock).mockReturnValue({
+      activeCount: 1,
+      loadError: null,
+      loadState: 'ready',
+      reload: jest.fn(),
+      visits: [
+        createVisit({
+          durationMinutes: null,
+          endedAt: null,
+          id: 'visit_active',
+          status: 'active',
+        }),
+      ],
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<VisitsScreen />);
+      await Promise.resolve();
+    });
+
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Current active visit');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Active');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('In progress');
   });
 });

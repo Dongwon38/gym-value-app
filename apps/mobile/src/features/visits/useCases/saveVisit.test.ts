@@ -1,10 +1,11 @@
 jest.mock('../../../data/repositories', () => ({
   createVisit: jest.fn(),
+  getActiveVisit: jest.fn(),
   updateVisit: jest.fn(),
 }));
 
 import { emptyVisitFormValues } from '../../../domain/forms';
-import { createVisit, updateVisit } from '../../../data/repositories';
+import { createVisit, getActiveVisit, updateVisit } from '../../../data/repositories';
 import {
   deriveCompletedVisitDurationMinutes,
   saveVisit,
@@ -27,6 +28,7 @@ describe('saveVisit', () => {
   });
 
   it('creates a completed visit from valid form values', async () => {
+    (getActiveVisit as jest.Mock).mockResolvedValue(null);
     (createVisit as jest.Mock).mockResolvedValue({ id: 'visit_1', status: 'completed' });
 
     await saveVisit(
@@ -51,6 +53,7 @@ describe('saveVisit', () => {
   });
 
   it('updates an existing visit when an id is provided', async () => {
+    (getActiveVisit as jest.Mock).mockResolvedValue(null);
     (updateVisit as jest.Mock).mockResolvedValue({ id: 'visit_1', status: 'completed' });
 
     await saveVisit(
@@ -76,6 +79,7 @@ describe('saveVisit', () => {
   });
 
   it('throws a validation error when required fields are missing', async () => {
+    (getActiveVisit as jest.Mock).mockResolvedValue(null);
     await expect(
       saveVisit(
         {
@@ -87,5 +91,50 @@ describe('saveVisit', () => {
         { gymId: 'gym_1' },
       ),
     ).rejects.toBeInstanceOf(VisitFormValidationError);
+  });
+
+  it('creates an active visit with no endedAt or duration', async () => {
+    (getActiveVisit as jest.Mock).mockResolvedValue(null);
+    (createVisit as jest.Mock).mockResolvedValue({ id: 'visit_2', status: 'active' });
+
+    await saveVisit(
+      {
+        ...emptyVisitFormValues,
+        date: '2026-04-02',
+        endedAt: '',
+        notes: 'Still training',
+        startedAt: '10:00',
+        status: 'active',
+      },
+      { gymId: 'gym_1' },
+    );
+
+    expect(createVisit).toHaveBeenCalledWith({
+      durationMinutes: null,
+      endedAt: null,
+      gymId: 'gym_1',
+      notes: 'Still training',
+      startedAt: '2026-04-02T17:00:00.000Z',
+      status: 'active',
+    });
+  });
+
+  it('blocks a second active visit when another active row already exists', async () => {
+    (getActiveVisit as jest.Mock).mockResolvedValue({ id: 'visit_active', status: 'active' });
+
+    await expect(
+      saveVisit(
+        {
+          ...emptyVisitFormValues,
+          date: '2026-04-02',
+          endedAt: '',
+          startedAt: '10:00',
+          status: 'active',
+        },
+        { gymId: 'gym_1' },
+      ),
+    ).rejects.toBeInstanceOf(VisitFormValidationError);
+
+    expect(createVisit).not.toHaveBeenCalled();
   });
 });

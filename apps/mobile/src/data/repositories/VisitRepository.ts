@@ -113,6 +113,33 @@ export async function listVisits(options?: { includeCancelled?: boolean }) {
   return result.rows._array.map(mapVisitRowToModel);
 }
 
+export async function getActiveVisit() {
+  const db = getDatabase();
+  const result = await db.executeAsync<VisitRow>(
+    `
+      SELECT
+        id,
+        gym_id,
+        started_at,
+        ended_at,
+        duration_minutes,
+        status,
+        source,
+        confidence,
+        notes,
+        created_at,
+        updated_at
+      FROM visits
+      WHERE status = 'active'
+      ORDER BY started_at DESC, created_at DESC
+      LIMIT 1
+    `,
+  );
+  const row = result.rows.item(0) ?? result.rows._array[0];
+
+  return row ? mapVisitRowToModel(row) : null;
+}
+
 export async function createVisit(input: VisitWriteInput) {
   const db = getDatabase();
   const visitId = createVisitId();
@@ -150,6 +177,30 @@ export async function createVisit(input: VisitWriteInput) {
         timestamp,
       ],
     );
+
+    return selectVisitById(tx.executeAsync, visitId);
+  });
+}
+
+export async function cancelVisit(visitId: string) {
+  const db = getDatabase();
+  const timestamp = new Date().toISOString();
+
+  return db.transaction(async tx => {
+    const result = await tx.executeAsync(
+      `
+        UPDATE visits
+        SET
+          status = 'cancelled',
+          updated_at = ?
+        WHERE id = ?
+      `,
+      [timestamp, visitId],
+    );
+
+    if (result.rowsAffected === 0) {
+      throw new Error(`Visit "${visitId}" could not be cancelled.`);
+    }
 
     return selectVisitById(tx.executeAsync, visitId);
   });

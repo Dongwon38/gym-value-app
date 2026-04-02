@@ -14,6 +14,6 @@ export {
   updateFeeItem,
 } from './FeeItemRepository';
 export type { FeeItemRow, FeeItemWriteInput } from './FeeItemRepository';
-export { listVisits, mapVisitRowToModel } from './VisitRepository';
-export { createVisit, updateVisit } from './VisitRepository';
+export { getActiveVisit, listVisits, mapVisitRowToModel } from './VisitRepository';
+export { cancelVisit, createVisit, updateVisit } from './VisitRepository';
 export type { VisitRow, VisitWriteInput } from './VisitRepository';

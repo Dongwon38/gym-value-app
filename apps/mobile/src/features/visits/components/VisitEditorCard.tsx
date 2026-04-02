@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { VisitFormValues } from '../../../domain/forms';
+import type { VisitFormStatus, VisitFormValues } from '../../../domain/forms';
 import type { ValidationIssue } from '../../../utils/validation';
 import { Card, PrimaryButton, TextField } from '../../../ui/components';
 import { useAppTheme } from '../../../ui/theme';
@@ -21,6 +21,12 @@ type VisitEditorCardProps = {
   saveFeedback: string | null;
   saveState: 'idle' | 'saving' | 'success' | 'error';
   validationErrors: ValidationIssue[];
+};
+
+type ChoiceOption<Value extends string> = {
+  description: string;
+  label: string;
+  value: Value;
 };
 
 function getFieldError(errors: ValidationIssue[], field: keyof VisitFormValues) {
@@ -46,6 +52,70 @@ function formatDurationPreview(durationMinutes: number | null) {
   return `${hours} hr ${minutes} min`;
 }
 
+function ChoicePillGroup<Value extends string>({
+  label,
+  onChange,
+  options,
+  selectedValue,
+}: {
+  label: string;
+  onChange: (value: Value) => void;
+  options: ChoiceOption<Value>[];
+  selectedValue: Value;
+}) {
+  const theme = useAppTheme();
+
+  return (
+    <View style={styles.field}>
+      <Text style={[styles.label, { color: theme.colors.textPrimary }]}>
+        {label}
+      </Text>
+      <View style={styles.choices}>
+        {options.map(option => {
+          const isSelected = option.value === selectedValue;
+
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityRole="button"
+              onPress={() => {
+                onChange(option.value);
+              }}
+              style={({ pressed }) => [
+                styles.choice,
+                {
+                  backgroundColor: isSelected
+                    ? theme.colors.surfaceMuted
+                    : theme.colors.surface,
+                  borderColor: isSelected
+                    ? theme.colors.accent
+                    : theme.colors.border,
+                  borderRadius: theme.radius.sm,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}>
+              <Text
+                style={[
+                  styles.choiceLabel,
+                  {
+                    color: isSelected
+                      ? theme.colors.accent
+                      : theme.colors.textPrimary,
+                  },
+                ]}>
+                {option.label}
+              </Text>
+              <Text style={[styles.choiceDescription, { color: theme.colors.textMuted }]}>
+                {option.description}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 export function VisitEditorCard({
   derivedDurationMinutes,
   editorMode,
@@ -60,13 +130,25 @@ export function VisitEditorCard({
   validationErrors,
 }: VisitEditorCardProps) {
   const theme = useAppTheme();
+  const statusOptions: ChoiceOption<VisitFormStatus>[] = [
+    {
+      description: 'Store both start and end time, then derive duration during save.',
+      label: 'Completed',
+      value: 'completed',
+    },
+    {
+      description: 'Store only the start time for now and keep ended_at empty.',
+      label: 'Active',
+      value: 'active',
+    },
+  ];
 
   return (
     <Card
       subtitle={
         editorMode === 'edit'
-          ? 'Update the selected completed visit. Duration is re-derived from the saved date and times.'
-          : 'Create a completed manual visit under the current primary gym. Active visit controls land in the next task.'
+          ? 'Update the selected visit. Completed rows re-derive duration, and active rows keep ended_at empty.'
+          : 'Create a new manual visit under the current primary gym. Both completed and active visit states are supported here.'
       }
       title={editorMode === 'edit' ? 'Edit visit' : 'Add visit'}>
       <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
@@ -93,6 +175,15 @@ export function VisitEditorCard({
       ) : null}
 
       <View style={[styles.form, { marginTop: theme.spacing.lg }]}>
+        <ChoicePillGroup
+          label="Visit status"
+          onChange={value => {
+            onSetFieldValue('status', value);
+          }}
+          options={statusOptions}
+          selectedValue={formValues.status}
+        />
+
         <TextField
           errorMessage={getFieldError(validationErrors, 'date')}
           helperText="YYYY-MM-DD"
@@ -117,18 +208,20 @@ export function VisitEditorCard({
               value={formValues.startedAt}
             />
           </View>
-          <View style={styles.inlineField}>
-            <TextField
-              errorMessage={getFieldError(validationErrors, 'endedAt')}
-              helperText="24-hour format"
-              label="End time"
-              onChangeText={value => {
-                onSetFieldValue('endedAt', value);
-              }}
-              placeholder="11:15"
-              value={formValues.endedAt}
-            />
-          </View>
+          {formValues.status === 'completed' ? (
+            <View style={styles.inlineField}>
+              <TextField
+                errorMessage={getFieldError(validationErrors, 'endedAt')}
+                helperText="24-hour format"
+                label="End time"
+                onChangeText={value => {
+                  onSetFieldValue('endedAt', value);
+                }}
+                placeholder="11:15"
+                value={formValues.endedAt}
+              />
+            </View>
+          ) : null}
         </View>
 
         <TextField
@@ -142,13 +235,23 @@ export function VisitEditorCard({
           value={formValues.notes}
         />
 
-        <Card
-          subtitle="The app stores only started_at and ended_at. duration_minutes is derived during save."
-          title="Derived duration preview">
-          <Text style={[styles.meta, { color: theme.colors.textPrimary }]}>
-            {formatDurationPreview(derivedDurationMinutes)}
-          </Text>
-        </Card>
+        {formValues.status === 'completed' ? (
+          <Card
+            subtitle="The app stores only started_at and ended_at. duration_minutes is derived during save."
+            title="Derived duration preview">
+            <Text style={[styles.meta, { color: theme.colors.textPrimary }]}>
+              {formatDurationPreview(derivedDurationMinutes)}
+            </Text>
+          </Card>
+        ) : (
+          <Card
+            subtitle="An active visit keeps ended_at and duration_minutes empty until the visit is updated to completed."
+            title="Active visit behavior">
+            <Text style={[styles.meta, { color: theme.colors.textPrimary }]}>
+              Save this row with a start time only. The single active-visit rule is enforced before write.
+            </Text>
+          </Card>
+        )}
       </View>
 
       <View style={[styles.actions, { marginTop: theme.spacing.xl }]}>
@@ -185,11 +288,33 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
+  choice: {
+    borderWidth: 1,
+    gap: 6,
+    minWidth: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  choiceDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  choiceLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  choices: {
+    gap: 12,
+  },
   feedback: {
     fontSize: 15,
     fontWeight: '600',
     lineHeight: 22,
     marginTop: 12,
+  },
+  field: {
+    gap: 10,
   },
   form: {
     gap: 18,
@@ -202,6 +327,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 18,
   },
   meta: {
     fontSize: 15,
