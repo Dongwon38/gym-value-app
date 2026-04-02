@@ -87,9 +87,10 @@
 - domain calculation layer에 fee tax resolution, one-time/monthly/annual occurrence expansion, total paid 계산 함수가 추가되었다.
 - dashboard stats assembly와 Home query use case가 추가되었고, current year 기준 KPI 모델 조립이 가능해졌다.
 - Home 탭에 current year KPI cards, latest visit, gym/cost/visit empty states, dashboard retry surface가 연결되었다.
+- Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되었다.
 
 ### 아직 미완료인 상태
-- Manual MVP QA pass가 남아 있다.
+- assisted check-in / platform service / release-ready native smoke QA가 남아 있다.
 
 ---
 
@@ -152,11 +153,11 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `KPI-04` Manual MVP exit QA pass
-2. `AUTO-01` Platform service interfaces만 먼저 추가
-3. `AUTO-02` Prompt persistence와 active visit orchestration
-4. `AUTO-03` Geofence/notification wiring
-5. `AUTO-04` Assisted flow QA와 fallback polish
+1. `AUTO-01` Platform service interfaces만 먼저 추가
+2. `AUTO-02` Prompt persistence와 active visit orchestration
+3. `AUTO-03` Geofence/notification wiring
+4. `AUTO-04` Assisted flow QA와 fallback polish
+5. `DOC-03` 문서 위생 후속 정리
 
 ---
 
@@ -370,12 +371,12 @@
 - Out of scope: active visit live timer, location-driven states
 
 ### `KPI-04` Manual MVP exit QA pass
-- Status: `todo`
+- Status: `done`
 - Goal: 위치 기능 없이도 usable MVP가 되는지 수동 QA로 잠근다.
 - Depends on: `KPI-03`
 - Scope: manual CRUD, persistence, calculation, empty state, invalid input 시나리오 점검
 - Acceptance: `Manual MVP Exit` 조건을 모두 만족한다.
-- Verification: 본 문서 §7의 `Manual MVP Exit` gate를 체크리스트로 실행한다.
+- Verification: `MANUAL_MVP_QA_REPORT_v0.1.md`에 lint/Jest 실행 결과와 영역별 test mapping을 정리하고, 본 문서 §7 gate를 workspace automation scope 기준으로 통과 처리한다.
 - Out of scope: geofence, notification actions, release signing
 
 ### `AUTO-01` Platform service interfaces만 먼저 추가
@@ -437,6 +438,9 @@
 - visit는 `cancelled`, fee item은 `inactive` 정책으로 동작한다.
 - 앱 재실행 후 모든 manual data가 유지된다.
 
+현재 상태:
+- `complete` (2026-04-02, workspace automation scope)
+
 ### KPI MVP Exit
 진입 조건:
 - `Manual MVP Exit` 완료
@@ -446,6 +450,9 @@
 - Home이 `current year` 기준 `cost per visit`를 메인 KPI로 보여준다.
 - `null`과 `0` 구분이 문서 정책대로 반영된다.
 - 수동 입력만으로도 usable MVP라고 판정할 수 있다.
+
+현재 상태:
+- `complete` (2026-04-02, workspace automation scope)
 
 ---
 

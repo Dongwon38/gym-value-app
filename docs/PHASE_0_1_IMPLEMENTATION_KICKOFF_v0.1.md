@@ -86,9 +86,10 @@
 - domain calculation layer에 fee tax resolution과 occurrence expansion 함수가 연결되어 있다.
 - dashboard stats assembly와 Home query use case가 연결되어 있다.
 - Home 탭에 KPI cards, latest visit surface, retry state, gym/cost/visit empty state CTA가 연결되어 있다.
+- Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되어 있다.
 
 아직 미완료인 상태:
-- Manual MVP QA pass
+- assisted check-in / platform service / release-ready native smoke QA
 
 ---
 
