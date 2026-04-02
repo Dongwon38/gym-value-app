@@ -80,9 +80,10 @@
 - Costs 탭에 `fee_items` read path, active-first list shell, empty state, add CTA entry point, refresh hook가 연결되었다.
 - `FeeItemRepository` create/update path와 Costs add/edit form이 연결되었고, one-time/monthly/annual + tax mode + active state 저장이 가능해졌다.
 - fee item inactive/delete path와 active-first refresh가 연결되었고, inactive row는 history 용도로 계속 보이도록 정책이 고정되었다.
+- Visits 탭에 `visits` read path, cancelled 제외 기본 리스트, newest-first list shell, empty state, add CTA entry point, refresh hook가 연결되었다.
 
 ### 아직 미완료인 상태
-- visit/settings repositories와 남은 CRUD 저장 플로우가 없다.
+- visit write-path, settings repositories와 남은 CRUD 저장 플로우가 없다.
 - Home KPI와 calculation layer가 없다.
 
 ---
@@ -146,11 +147,11 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `VISIT-01` Visits list와 empty state
-2. `VISIT-02` Add/Edit Visit form과 duration derivation
-3. `VISIT-03` Cancel flow, duplicate active guard, list refresh
-4. `SET-01` Minimal settings screen과 upsert
-5. `KPI-01` Fee occurrence expansion과 tax calculator
+1. `VISIT-02` Add/Edit Visit form과 duration derivation
+2. `VISIT-03` Cancel flow, duplicate active guard, list refresh
+3. `SET-01` Minimal settings screen과 upsert
+4. `KPI-01` Fee occurrence expansion과 tax calculator
+5. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
 
 ---
 
@@ -301,12 +302,12 @@
 - Out of scope: hard delete, archive/history UI
 
 ### `VISIT-01` Visits list와 empty state
-- Status: `todo`
+- Status: `done`
 - Goal: 방문 기록 화면의 기본 리스트 구조를 만든다.
 - Depends on: `FND-03`, `DB-03`
 - Scope: visit list query, empty state, 최신순 정렬, add CTA
 - Acceptance: 방문 없음 상태와 방문 존재 상태를 모두 렌더링할 수 있다.
-- Verification: 첫 진입 시 empty state, 저장 후 list refresh 동작 확인
+- Verification: `VisitRepository` unit test에서 cancelled 제외 + newest-first query를 확인하고, `useVisits` hook test에서 refresh 동작을 확인하며, `VisitsScreen` test에서 empty/list 렌더 상태를 확인한다.
 - Out of scope: filter chips, recovery candidates
 
 ### `VISIT-02` Add/Edit Visit form과 duration derivation
