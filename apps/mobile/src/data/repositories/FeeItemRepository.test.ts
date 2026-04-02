@@ -3,7 +3,12 @@ jest.mock('../db', () => ({
 }));
 
 import { getDatabase } from '../db';
-import { createFeeItem, listFeeItems, updateFeeItem } from './FeeItemRepository';
+import {
+  createFeeItem,
+  listFeeItems,
+  setFeeItemActiveState,
+  updateFeeItem,
+} from './FeeItemRepository';
 
 function createFeeItemRow(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -145,6 +150,33 @@ describe('FeeItemRepository', () => {
       ],
     );
     expect(savedCostItem.label).toBe('Premium membership');
+  });
+
+  it('marks a fee item inactive without removing the row', async () => {
+    const txExecuteAsync = jest
+      .fn()
+      .mockResolvedValueOnce({ rowsAffected: 1 })
+      .mockResolvedValueOnce({
+        rows: {
+          item: () => createFeeItemRow({ id: 'fee_1', is_active: 0 }),
+        },
+      });
+    const transaction = jest.fn(async callback =>
+      callback({
+        executeAsync: txExecuteAsync,
+      }),
+    );
+
+    (getDatabase as jest.Mock).mockReturnValue({ transaction });
+
+    const savedCostItem = await setFeeItemActiveState('fee_1', false);
+
+    expect(txExecuteAsync).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('SET'),
+      [0, expect.any(String), 'fee_1'],
+    );
+    expect(savedCostItem.isActive).toBe(false);
   });
 
   it('lists fee items in active-first order', async () => {

@@ -78,9 +78,10 @@
 - primary gym create/update persistence와 저장 성공/실패 피드백이 Settings 탭에 연결되어 있다.
 - Costs 탭에 fee item read path, active-first list shell, empty state, add CTA entry point가 연결되어 있다.
 - Costs 탭에 fee item add/edit form과 create/update persistence가 연결되어 있다.
+- Costs 탭에 fee item inactive/delete path와 inactive history 표시 정책이 연결되어 있다.
 
 아직 미완료인 상태:
-- fee item inactive/delete path, visit / settings repositories와 remaining CRUD
+- visit / settings repositories와 remaining CRUD
 - Home KPI / calculation layer
 
 ---
@@ -584,7 +585,7 @@ form 입력에 대한 기본 validation 구현
 - [x] Edit Cost Item UI 구현
 - [x] createFeeItem 연결
 - [x] updateFeeItem 연결
-- [ ] delete/deactivate 연결
+- [x] delete/deactivate 연결
 - [x] 빈 상태 UI 구현
 
 ---
@@ -781,7 +782,7 @@ Phase 1 종료 시 아래가 가능해야 한다.
 - [x] `GYM-02` Gym persistence와 edit flow
 - [x] `COST-01` Costs list와 empty state
 - [x] `COST-02` Add/Edit Cost Item form
-- [ ] `COST-03` Inactive/delete flow와 list refresh
+- [x] `COST-03` Inactive/delete flow와 list refresh
 - [ ] `VISIT-01` Visits list와 empty state
 - [ ] `VISIT-02` Add/Edit Visit form과 duration derivation
 - [ ] `VISIT-03` Cancel flow, duplicate active guard, list refresh

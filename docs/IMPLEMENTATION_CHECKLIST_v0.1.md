@@ -79,9 +79,10 @@
 - `GymRepository` write path와 primary gym create/update 규칙이 추가되었고, Gym Setup 저장 성공/실패 피드백이 연결되었다.
 - Costs 탭에 `fee_items` read path, active-first list shell, empty state, add CTA entry point, refresh hook가 연결되었다.
 - `FeeItemRepository` create/update path와 Costs add/edit form이 연결되었고, one-time/monthly/annual + tax mode + active state 저장이 가능해졌다.
+- fee item inactive/delete path와 active-first refresh가 연결되었고, inactive row는 history 용도로 계속 보이도록 정책이 고정되었다.
 
 ### 아직 미완료인 상태
-- fee item inactive/delete path, visit/settings repositories와 남은 CRUD 저장 플로우가 없다.
+- visit/settings repositories와 남은 CRUD 저장 플로우가 없다.
 - Home KPI와 calculation layer가 없다.
 
 ---
@@ -145,9 +146,9 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `COST-03` Inactive/delete flow와 list refresh
-2. `VISIT-01` Visits list와 empty state
-3. `VISIT-02` Add/Edit Visit form과 duration derivation
+1. `VISIT-01` Visits list와 empty state
+2. `VISIT-02` Add/Edit Visit form과 duration derivation
+3. `VISIT-03` Cancel flow, duplicate active guard, list refresh
 4. `SET-01` Minimal settings screen과 upsert
 5. `KPI-01` Fee occurrence expansion과 tax calculator
 
@@ -291,12 +292,12 @@
 - Out of scope: KPI 반영, 고급 cost insight
 
 ### `COST-03` Inactive/delete flow와 list refresh
-- Status: `todo`
+- Status: `done`
 - Goal: 비용 항목 삭제 정책을 soft-delete 기준으로 고정한다.
 - Depends on: `COST-02`
 - Scope: `is_active = 0` 처리, list refresh, 사용자 피드백, inactive row 표시 정책
 - Acceptance: UI에서는 삭제처럼 동작하되 데이터 레벨에서는 inactive로 관리된다.
-- Verification: 비활성화 후 재실행해도 항목이 계산 대상에서 제외되고, raw row는 남아 있다.
+- Verification: `deactivateCostItem` unit test와 `FeeItemRepository` active-state test로 inactive write path를 확인하고, `CostsScreen` test에서 delete action과 inactive history 안내가 렌더링된다.
 - Out of scope: hard delete, archive/history UI
 
 ### `VISIT-01` Visits list와 empty state

@@ -10,6 +10,7 @@ export {
   createFeeItem,
   listFeeItems,
   mapFeeItemRowToModel,
+  setFeeItemActiveState,
   updateFeeItem,
 } from './FeeItemRepository';
 export type { FeeItemRow, FeeItemWriteInput } from './FeeItemRepository';

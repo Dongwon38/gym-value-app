@@ -13,6 +13,10 @@ jest.mock('../../features/costs/useCases/costItems', () => ({
   formatCostItemDateRange: jest.fn(() => 'Starts 2026-04-01'),
 }));
 
+jest.mock('../../features/costs/useCases/deactivateCostItem', () => ({
+  deactivateCostItem: jest.fn(),
+}));
+
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
 
@@ -60,6 +64,7 @@ describe('CostsScreen', () => {
     (useCostItemForm as jest.Mock).mockReturnValue({
       closeEditor: jest.fn(),
       editorMode: 'closed',
+      editingCostItem: null,
       errors: [],
       formValues: null,
       hasPrimaryGym: true,
@@ -117,5 +122,30 @@ describe('CostsScreen', () => {
     expect(JSON.stringify(renderer!.toJSON())).toContain('Active');
     expect(JSON.stringify(renderer!.toJSON())).toContain('$59.99');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Edit Cost Item');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Delete Cost Item');
+  });
+
+  it('renders inactive history guidance for inactive cost rows', async () => {
+    mockClosedEditor();
+    (useCostItems as jest.Mock).mockReturnValue({
+      activeCount: 0,
+      costItems: [createFeeItem({ id: 'fee_2', isActive: false })],
+      inactiveCount: 1,
+      loadError: null,
+      loadState: 'ready',
+      reload: jest.fn(),
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<CostsScreen />);
+      await Promise.resolve();
+    });
+
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Inactive');
+    expect(JSON.stringify(renderer!.toJSON())).toContain(
+      'Inactive items stay visible for history',
+    );
   });
 });

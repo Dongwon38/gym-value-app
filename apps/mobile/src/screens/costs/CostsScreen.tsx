@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CostItemEditorCard } from '../../features/costs/components/CostItemEditorCard';
 import { useCostItemForm } from '../../features/costs/hooks/useCostItemForm';
 import { useCostItems } from '../../features/costs/hooks/useCostItems';
+import { deactivateCostItem } from '../../features/costs/useCases/deactivateCostItem';
 import {
   formatCostItemAmount,
   formatCostItemCadence,
@@ -20,11 +21,15 @@ import { useAppTheme } from '../../ui/theme';
 
 export function CostsScreen() {
   const theme = useAppTheme();
+  const [deleteState, setDeleteState] = useState<'idle' | 'deleting' | 'success' | 'error'>('idle');
+  const [deleteFeedback, setDeleteFeedback] = useState<string | null>(null);
+  const [deletingCostItemId, setDeletingCostItemId] = useState<string | null>(null);
   const { activeCount, costItems, inactiveCount, loadError, loadState, reload } =
     useCostItems();
   const {
     closeEditor,
     editorMode,
+    editingCostItem,
     errors,
     formValues,
     hasPrimaryGym,
@@ -38,6 +43,31 @@ export function CostsScreen() {
   } = useCostItemForm();
 
   const totalCount = costItems.length;
+
+  async function handleDeactivateCostItem(costItem: (typeof costItems)[number]) {
+    setDeleteState('deleting');
+    setDeleteFeedback(null);
+    setDeletingCostItemId(costItem.id);
+
+    try {
+      const deactivatedCostItem = await deactivateCostItem(costItem);
+
+      if (editingCostItem?.id === deactivatedCostItem.id) {
+        closeEditor();
+      }
+
+      await reload();
+      setDeleteState('success');
+      setDeleteFeedback(`${deactivatedCostItem.label} marked inactive.`);
+    } catch (error) {
+      setDeleteState('error');
+      setDeleteFeedback(
+        error instanceof Error ? error.message : 'Unknown cost deactivate error.',
+      );
+    } finally {
+      setDeletingCostItemId(null);
+    }
+  }
 
   return (
     <ScreenContainer
@@ -53,6 +83,21 @@ export function CostsScreen() {
             ? 'No saved cost items yet. Open the editor below to create the first cost line for your primary gym.'
             : `${totalCount} saved cost item${totalCount === 1 ? '' : 's'} loaded. ${activeCount} active and ${inactiveCount} inactive.`}
         </Text>
+        {deleteFeedback ? (
+          <Text
+            style={[
+              styles.feedback,
+              {
+                color:
+                  deleteState === 'error'
+                    ? theme.colors.danger
+                    : theme.colors.accent,
+                marginTop: theme.spacing.md,
+              },
+            ]}>
+            {deleteFeedback}
+          </Text>
+        ) : null}
         <View style={[styles.actions, { marginTop: theme.spacing.lg }]}>
           <PrimaryButton
             label="Add Cost Item"
@@ -169,6 +214,11 @@ export function CostsScreen() {
                   ? 'Tax: using default GST/PST.'
                   : 'Tax: custom GST/PST override.'}
               </Text>
+              {!costItem.isActive ? (
+                <Text style={[styles.meta, { color: theme.colors.textMuted }]}>
+                  Inactive items stay visible for history and can be reactivated by editing them.
+                </Text>
+              ) : null}
               <View style={[styles.actions, { marginTop: theme.spacing.lg }]}>
                 <PrimaryButton
                   label="Edit Cost Item"
@@ -176,6 +226,35 @@ export function CostsScreen() {
                     startEdit(costItem);
                   }}
                 />
+                {costItem.isActive ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={deletingCostItemId === costItem.id}
+                    onPress={() => {
+                      handleDeactivateCostItem(costItem);
+                    }}
+                    style={({ pressed }) => [
+                      styles.inlineAction,
+                      {
+                        opacity:
+                          deletingCostItemId === costItem.id
+                            ? 0.5
+                            : pressed
+                              ? 0.7
+                              : 1,
+                      },
+                    ]}>
+                    <Text
+                      style={[
+                        styles.inlineActionLabel,
+                        { color: theme.colors.danger },
+                      ]}>
+                      {deletingCostItemId === costItem.id
+                        ? 'Marking Inactive...'
+                        : 'Delete Cost Item'}
+                    </Text>
+                  </Pressable>
+                ) : null}
               </View>
             </Card>
           ))
@@ -195,6 +274,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     lineHeight: 30,
+  },
+  feedback: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 22,
   },
   inlineAction: {
     alignSelf: 'flex-start',

@@ -260,3 +260,30 @@ export async function updateFeeItem(feeItemId: string, input: FeeItemWriteInput)
     return selectFeeItemById(tx.executeAsync, feeItemId);
   });
 }
+
+export async function setFeeItemActiveState(
+  feeItemId: string,
+  isActive: boolean,
+) {
+  const db = getDatabase();
+  const timestamp = new Date().toISOString();
+
+  return db.transaction(async tx => {
+    const result = await tx.executeAsync(
+      `
+        UPDATE fee_items
+        SET
+          is_active = ?,
+          updated_at = ?
+        WHERE id = ?
+      `,
+      [isActive ? 1 : 0, timestamp, feeItemId],
+    );
+
+    if (result.rowsAffected === 0) {
+      throw new Error(`Fee item "${feeItemId}" could not update active state.`);
+    }
+
+    return selectFeeItemById(tx.executeAsync, feeItemId);
+  });
+}
