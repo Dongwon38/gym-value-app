@@ -71,6 +71,9 @@ jest.mock('@react-navigation/native', () => ({
   },
   NavigationContainer: ({ children }: { children: React.ReactNode }) =>
     children,
+  useNavigation: () => ({
+    navigate: jest.fn(),
+  }),
 }));
 
 jest.mock('@react-navigation/bottom-tabs', () => ({

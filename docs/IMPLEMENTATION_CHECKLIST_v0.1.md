@@ -86,9 +86,10 @@
 - visit cancel path가 `cancelled` soft delete로 연결되었고, active visit query와 duplicate active guard가 add/edit flow에 연결되었다.
 - domain calculation layer에 fee tax resolution, one-time/monthly/annual occurrence expansion, total paid 계산 함수가 추가되었다.
 - dashboard stats assembly와 Home query use case가 추가되었고, current year 기준 KPI 모델 조립이 가능해졌다.
+- Home 탭에 current year KPI cards, latest visit, gym/cost/visit empty states, dashboard retry surface가 연결되었다.
 
 ### 아직 미완료인 상태
-- Home KPI 화면과 Manual MVP QA pass가 남아 있다.
+- Manual MVP QA pass가 남아 있다.
 
 ---
 
@@ -151,11 +152,11 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `KPI-03` Home screen KPI cards와 empty/error states
-2. `KPI-04` Manual MVP exit QA pass
-3. `AUTO-01` Platform service interfaces만 먼저 추가
-4. `AUTO-02` Prompt persistence와 active visit orchestration
-5. `AUTO-03` Geofence/notification wiring
+1. `KPI-04` Manual MVP exit QA pass
+2. `AUTO-01` Platform service interfaces만 먼저 추가
+3. `AUTO-02` Prompt persistence와 active visit orchestration
+4. `AUTO-03` Geofence/notification wiring
+5. `AUTO-04` Assisted flow QA와 fallback polish
 
 ---
 
@@ -360,12 +361,12 @@
 - Out of scope: filters UI, month switcher
 
 ### `KPI-03` Home KPI screen과 empty/error states
-- Status: `todo`
+- Status: `done`
 - Goal: 제품 핵심 가치인 Home KPI를 UI로 완성한다.
 - Depends on: `KPI-02`
 - Scope: primary metric card, summary cards, gym/cost/visit empty states, latest visit 표시
 - Acceptance: Home이 `cost per visit`를 메인 KPI로 렌더링하고 `null`과 `0`을 구분해 표시한다.
-- Verification: empty state별 CTA와 populated state의 숫자 표시를 수동 확인한다.
+- Verification: `useHomeDashboard` hook test와 `HomeScreen` test에서 loading/error, gym/cost/visit empty state CTA, populated KPI card와 latest visit 렌더를 확인한다.
 - Out of scope: active visit live timer, location-driven states
 
 ### `KPI-04` Manual MVP exit QA pass
