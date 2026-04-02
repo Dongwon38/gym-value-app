@@ -68,11 +68,20 @@
 - `App.tsx`가 RN 템플릿 대신 `src` 기반 app entry를 사용한다.
 - React Navigation 기반 `RootNavigator` / `TabNavigator`와 4개 placeholder screen이 연결되어 있다.
 - iOS pod install이 새 navigation native dependency 상태까지 반영했다.
+- 공통 theme 토큰과 재사용 UI 베이스(`ScreenContainer`, `Card`, `PrimaryButton`, `EmptyState`)가 추가되었다.
+- `react-native-nitro-sqlite`와 `react-native-nitro-modules`가 설치되었다.
+- DB client module이 추가되었고 앱 시작 시 SQLite open bootstrap이 연결되어 있다.
+- migration runner와 `001_initial_schema` execution path가 추가되었고 `schema_migrations` 기록 흐름이 연결되어 있다.
+- `app_settings` default row seed가 추가되었고 DB readiness `booting / ready / error` gate가 앱 provider에 연결되어 있다.
+- `domain/models`와 `domain/constants`에 공용 enum, defaults, limits, app model type이 추가되었다.
+- `domain/forms`와 `utils/validation`에 form value types, validation message constants, 순수 validation helper가 추가되었다.
+- Settings 탭에 Gym Setup shell이 추가되었고 primary gym read path와 create/edit mode 전환이 연결되었다.
+- `GymRepository` write path와 primary gym create/update 규칙이 추가되었고, Gym Setup 저장 성공/실패 피드백이 연결되었다.
+- Costs 탭에 `fee_items` read path, active-first list shell, empty state, add CTA entry point, refresh hook가 연결되었다.
+- `FeeItemRepository` create/update path와 Costs add/edit form이 연결되었고, one-time/monthly/annual + tax mode + active state 저장이 가능해졌다.
 
 ### 아직 미완료인 상태
-- theme tokens와 재사용 공통 UI base가 없다.
-- SQLite dependency, DB client, migration runner가 없다.
-- repositories, form types, validation, CRUD 화면/플로우가 없다.
+- fee item inactive/delete path, visit/settings repositories와 남은 CRUD 저장 플로우가 없다.
 - Home KPI와 calculation layer가 없다.
 
 ---
@@ -136,11 +145,11 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `FND-03` AppProviders, theme, 공통 UI 베이스 추가
-2. `DB-01` SQLite dependency 및 DB client bootstrap
-3. `DB-02` migration runner와 `001_initial_schema` 추가
-4. `DB-03` settings bootstrap과 DB readiness logging
-5. `DOM-01` Domain enums/models와 상수 정의
+1. `COST-03` Inactive/delete flow와 list refresh
+2. `VISIT-01` Visits list와 empty state
+3. `VISIT-02` Add/Edit Visit form과 duration derivation
+4. `SET-01` Minimal settings screen과 upsert
+5. `KPI-01` Fee occurrence expansion과 tax calculator
 
 ---
 
@@ -192,93 +201,93 @@
 - Out of scope: modal routes, 상세 화면, form UX
 
 ### `FND-03` AppProviders, theme, 공통 UI 베이스
-- Status: `todo`
+- Status: `done`
 - Goal: 이후 화면 작업에 필요한 공통 provider와 최소 UI 토대를 만든다.
 - Depends on: `FND-02`
 - Scope: `AppProviders`, theme tokens, `ScreenContainer`, `Card`, `PrimaryButton`, `EmptyState` 정도의 최소 컴포넌트 추가
 - Acceptance: 새 화면이 공통 container와 theme를 통해 일관된 기본 레이아웃을 사용할 수 있다.
-- Verification: placeholder screens가 공통 theme/components를 사용하도록 교체된다.
+- Verification: placeholder screens가 공통 theme/components를 사용하도록 교체되었고 lint/test가 통과한다.
 - Out of scope: 디자인 polish, animation, 고급 컴포넌트 시스템
 
 ### `DB-01` SQLite dependency와 DB client bootstrap
-- Status: `todo`
+- Status: `done`
 - Goal: SQLite를 앱의 source of truth로 연결할 준비를 한다.
 - Depends on: `FND-01`
-- Scope: `react-native-nitro-sqlite` 설치, DB open 유틸과 client module scaffold 작성
-- Acceptance: 앱 코드에서 DB open 함수를 안전하게 호출할 수 있는 구조가 생긴다.
-- Verification: 개발 로그에서 DB open 성공/실패를 구분할 수 있다.
+- Scope: `react-native-nitro-sqlite` 및 `react-native-nitro-modules` 설치, DB open 유틸과 client module scaffold 작성, app startup bootstrap 연결
+- Acceptance: 앱 코드에서 DB open 함수를 안전하게 호출할 수 있고, 첫 렌더 시 DB bootstrap이 시작된다.
+- Verification: DB client가 open success/failure logging을 제공하고, 앱 provider/test에서 bootstrap 호출 경로가 확인된다.
 - Out of scope: schema 생성, repository 구현
 
 ### `DB-02` Migration runner와 `001_initial_schema`
-- Status: `todo`
+- Status: `done`
 - Goal: 문서에 정의된 초기 스키마를 코드로 고정한다.
 - Depends on: `DB-01`
-- Scope: migration 목록, runner, `001_initial_schema.ts`, `schema_migrations` 기록, 전체 DDL 반영
-- Acceptance: 첫 실행 시 6개 테이블과 인덱스가 생성되고, 재실행 시 중복 적용 에러가 없다.
-- Verification: migration 로그와 SQLite inspection으로 테이블/인덱스 존재를 확인한다.
+- Scope: migration 목록/runner 연결, `001_initial_schema.ts` 실행, `schema_migrations` 기록, app startup bootstrap에 migration path 반영
+- Acceptance: 첫 실행 시 6개 테이블과 인덱스가 생성되는 코드 경로가 존재하고, 재실행 시 같은 migration이 다시 적용되지 않는다.
+- Verification: migration runner unit test로 first-run apply와 re-run skip을 확인하고, app bootstrap이 migration runner를 호출한다.
 - Out of scope: CRUD 화면, Home KPI
 
 ### `DB-03` Settings bootstrap과 DB readiness logging
-- Status: `todo`
+- Status: `done`
 - Goal: `app_settings` 기본 row와 app ready 흐름을 만든다.
 - Depends on: `DB-02`
-- Scope: `id = 'default'` upsert, BC/Canada 기본값 seed, app ready/logging 처리
+- Scope: `id = 'default'` settings seed 보장, BC/Canada 기본값 seed, app readiness `booting / ready / error` gate와 retry/logging 처리
 - Acceptance: 앱 부팅 후 기본 설정 row가 존재하고 DB readiness 상태가 앱에서 구분된다.
-- Verification: 재실행 후 동일 settings row가 유지되고 중복 생성되지 않는다.
+- Verification: settings seed helper unit test로 inserted/reused 경로를 확인하고, App test에서 `ready / booting / error` 상태가 구분되어 렌더링된다.
 - Out of scope: Settings UI, tax editing UX
 
 ### `DOM-01` Domain enums/models와 상수 정의
-- Status: `todo`
+- Status: `done`
 - Goal: DB row와 화면/도메인 모델의 경계를 초기에 고정한다.
 - Depends on: `DB-02`
-- Scope: `Gym`, `Visit`, `FeeItem`, `AppSettings`, enum/constants, limits/defaults 정의
+- Scope: `Gym`, `Visit`, `FeeItem`, `AppSettings`, `DashboardStats`, enum/constants, limits/defaults 정의
 - Acceptance: repository와 UI가 공용으로 쓸 타입 집합이 존재한다.
-- Verification: 타입 import 경로가 생기고, 상태값/enum이 문서 결정과 일치한다.
+- Verification: `domain/models`, `domain/constants` import 경로가 생기고, runtime constant test에서 상태값/enum/defaults/limits가 문서 결정과 일치한다.
 - Out of scope: validation, mapper 구현 디테일
 
 ### `DOM-02` Form value types와 validation utilities
-- Status: `todo`
+- Status: `done`
 - Goal: manual-first 입력 규칙을 코드 수준에서 막는다.
 - Depends on: `DOM-01`
 - Scope: `GymFormValues`, `VisitFormValues`, `FeeItemFormValues`, validation helpers 또는 schema 작성
 - Acceptance: 잘못된 시간, 금액, 반경, 날짜 범위를 저장 전에 차단할 수 있다.
-- Verification: unit test 또는 직접 호출로 invalid input이 오류를 반환하는지 확인한다.
+- Verification: validation unit test에서 gym/fee/visit의 valid, invalid, warning 시나리오와 문서 메시지 경로를 확인한다.
 - Out of scope: 실제 form UI wiring
 
 ### `GYM-01` Gym Setup form shell과 primary gym 조회
-- Status: `todo`
+- Status: `done`
 - Goal: gym 기본 정보 입력 흐름의 첫 UI를 만든다.
 - Depends on: `FND-03`, `DOM-02`
 - Scope: Gym Setup 화면/모달 shell, `name/latitude/longitude/radius/timezone` 입력, primary gym read path
 - Acceptance: 저장 전후 상태를 고려한 Gym Setup 화면이 존재한다.
-- Verification: gym 없음 상태에서 setup 진입, existing primary gym 있을 때 초기값 로드 확인
+- Verification: primary gym read-path unit test에서 `null`과 existing row mapping을 확인하고, Settings 탭 shell이 create/edit mode와 validation preview를 구분해 렌더링한다.
 - Out of scope: 지도 선택, 현재 위치 기반 자동 입력
 
 ### `GYM-02` Gym persistence와 edit flow
-- Status: `todo`
+- Status: `done`
 - Goal: gym 생성/수정이 실제 DB와 연결되도록 한다.
 - Depends on: `GYM-01`, `DB-03`
 - Scope: `GymRepository`, create/update, primary gym 유지 규칙, 성공/실패 피드백
-- Acceptance: 단일 primary gym을 생성하고 다시 열어 수정할 수 있다.
-- Verification: 앱 재실행 후 동일 gym이 유지되고, primary gym query가 일관된다.
+- Acceptance: 단일 primary gym을 생성하고 다시 열어 수정할 수 있으며, 저장 결과가 Settings 화면 피드백으로 드러난다.
+- Verification: repository/use case unit test에서 create/update와 primary gym 유지 규칙을 확인하고, Settings 탭 Gym Setup shell이 저장 성공/실패 상태를 구분해 렌더링한다.
 - Out of scope: multi-gym UI, geofence sync
 
 ### `COST-01` Costs list와 empty state
-- Status: `todo`
+- Status: `done`
 - Goal: 비용 화면의 기본 탐색 구조를 만든다.
 - Depends on: `FND-03`, `DB-03`
 - Scope: cost list query, empty state, active 우선 정렬, add CTA
 - Acceptance: 비용이 없을 때와 있을 때의 리스트 상태가 모두 보인다.
-- Verification: seed 없이 empty state 확인 후, 항목 추가 시 list refresh가 가능하다.
+- Verification: `FeeItemRepository` unit test에서 active-first query를 확인하고, `useCostItems` hook test에서 refresh 동작을 확인하며, `CostsScreen` test에서 empty/list 렌더 상태를 확인한다.
 - Out of scope: add/edit form 세부 입력
 
 ### `COST-02` Add/Edit Cost Item form
-- Status: `todo`
+- Status: `done`
 - Goal: 비용 항목 생성/수정 폼을 구현한다.
 - Depends on: `COST-01`, `DOM-02`
 - Scope: `label/category/amount_pre_tax/cadence/start_date/end_date/tax_mode/gst_rate/pst_rate/is_active` 입력
 - Acceptance: `one_time`, `monthly`, `annual` 비용을 생성/수정할 수 있고 `cadence = custom`은 UI에 노출되지 않는다.
-- Verification: 각 cadence별 저장 후 row 값과 validation 결과를 확인한다.
+- Verification: `saveCostItem` unit test에서 create/update와 custom tax override를 확인하고, `FeeItemRepository` test에서 write path를 확인하며, `CostsScreen`이 add/edit editor 진입점을 렌더링한다.
 - Out of scope: KPI 반영, 고급 cost insight
 
 ### `COST-03` Inactive/delete flow와 list refresh

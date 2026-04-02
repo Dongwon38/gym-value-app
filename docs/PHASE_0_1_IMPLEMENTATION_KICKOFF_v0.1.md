@@ -67,11 +67,20 @@
 - `apps/mobile/src` 루트와 최소 app shell/provider 구조가 생성되어 있다.
 - `App.tsx`가 RN 템플릿 대신 `src` 기반 entry를 사용한다.
 - React Navigation 기반 navigation shell과 4개 탭 placeholder가 연결되어 있다.
+- 공통 theme 토큰과 재사용 UI base가 추가되어 placeholder screen들이 같은 레이아웃 베이스를 사용한다.
+- `react-native-nitro-sqlite`와 `react-native-nitro-modules`가 설치되어 있다.
+- DB client module과 app startup bootstrap 경로가 연결되어 있다.
+- migration runner와 `001_initial_schema` startup execution path가 연결되어 있다.
+- `app_settings` default seed와 DB readiness `booting / ready / error` gate가 연결되어 있다.
+- `domain/models`와 `domain/constants`에 공용 app model, enum, defaults, limits가 추가되어 있다.
+- `domain/forms`와 `utils/validation`에 form value types, validation message constants, 순수 validator가 추가되어 있다.
+- Settings 탭에 Gym Setup shell과 primary gym read path가 연결되어 있다.
+- primary gym create/update persistence와 저장 성공/실패 피드백이 Settings 탭에 연결되어 있다.
+- Costs 탭에 fee item read path, active-first list shell, empty state, add CTA entry point가 연결되어 있다.
+- Costs 탭에 fee item add/edit form과 create/update persistence가 연결되어 있다.
 
 아직 미완료인 상태:
-- theme / 공통 UI base
-- SQLite / migration runner
-- repositories / validation / CRUD
+- fee item inactive/delete path, visit / settings repositories와 remaining CRUD
 - Home KPI / calculation layer
 
 ---
@@ -276,7 +285,6 @@ src/
 - [x] Metro monorepo 설정이 연결되어 있다.
 
 ### 남은 작업
-- `FND-03` AppProviders, theme, 공통 UI 베이스
 
 ### 완료 기준
 - 현재 bootstrap 자산 위에 project shell이 올라간다.
@@ -289,7 +297,7 @@ src/
 - [x] Metro monorepo 설정 완료
 - [x] `FND-01` App shell / `src` root
 - [x] `FND-02` Navigation shell
-- [ ] `FND-03` Providers / theme / UI base
+- [x] `FND-03` Providers / theme / UI base
 
 ---
 
@@ -324,10 +332,10 @@ src/
 - 모든 화면에서 공통 spacing/typography를 사용할 수 있음
 
 ### 체크리스트
-- [ ] theme object 생성
-- [ ] spacing constants 정의
-- [ ] typography scale 정의
-- [ ] base screen layout 생성
+- [x] theme object 생성
+- [x] spacing constants 정의
+- [x] typography scale 정의
+- [x] base screen layout 생성
 
 ---
 
@@ -357,11 +365,13 @@ src/
 - 재시작 시 중복 에러 없음
 
 ### 체크리스트
-- [ ] db client 연결
-- [ ] migration runner 생성
-- [ ] 001 schema 작성
-- [ ] app startup 시 migration 연결
-- [ ] DB open success/failure logging
+- [x] db client 연결
+- [x] migration runner 생성
+- [x] 001 schema 작성
+- [x] app startup 시 migration 연결
+- [x] DB open success/failure logging
+- [x] default settings seed 연결
+- [x] DB readiness gate / retry 처리
 
 ---
 
@@ -414,6 +424,8 @@ Phase 0이 끝나면 아래가 존재해야 한다.
 - `Gym`
 - `Visit`
 - `FeeItem`
+- `AppSettings`
+- `DashboardStats`
 - `VisitFormValues`
 - `FeeItemFormValues`
 - `GymFormValues`
@@ -422,11 +434,13 @@ Phase 0이 끝나면 아래가 존재해야 한다.
 - 화면과 repository 사이에서 사용할 타입이 분리되어 있음
 
 ### 체크리스트
-- [ ] Gym model 정의
-- [ ] Visit model 정의
-- [ ] FeeItem model 정의
-- [ ] form types 정의
-- [ ] 공통 enum/constants 정의
+- [x] Gym model 정의
+- [x] Visit model 정의
+- [x] FeeItem model 정의
+- [x] AppSettings model 정의
+- [x] DashboardStats model 정의
+- [x] form types 정의
+- [x] 공통 enum/constants 정의
 
 ---
 
@@ -504,10 +518,10 @@ form 입력에 대한 기본 validation 구현
 - 사용자에게 이해 가능한 메시지 표시 가능
 
 ### 체크리스트
-- [ ] Visit validation 구현
-- [ ] Fee validation 구현
-- [ ] Gym validation 구현
-- [ ] validation message constants 정리
+- [x] Visit validation 구현
+- [x] Fee validation 구현
+- [x] Gym validation 구현
+- [x] validation message constants 정리
 
 ---
 
@@ -527,11 +541,11 @@ form 입력에 대한 기본 validation 구현
 - gym 1개를 저장하고 수정할 수 있음
 
 ### 체크리스트
-- [ ] Gym Setup UI 구현
-- [ ] createGym 연결
-- [ ] updateGym 연결
-- [ ] getPrimaryGym 연결
-- [ ] 저장 성공/실패 피드백 구현
+- [x] Gym Setup UI 구현
+- [x] createGym 연결
+- [x] updateGym 연결
+- [x] getPrimaryGym 연결
+- [x] 저장 성공/실패 피드백 구현
 
 ---
 
@@ -565,13 +579,13 @@ form 입력에 대한 기본 validation 구현
 - 리스트에 즉시 보임
 
 ### 체크리스트
-- [ ] CostsScreen 리스트 구현
-- [ ] Add Cost Item UI 구현
-- [ ] Edit Cost Item UI 구현
-- [ ] createFeeItem 연결
-- [ ] updateFeeItem 연결
+- [x] CostsScreen 리스트 구현
+- [x] Add Cost Item UI 구현
+- [x] Edit Cost Item UI 구현
+- [x] createFeeItem 연결
+- [x] updateFeeItem 연결
 - [ ] delete/deactivate 연결
-- [ ] 빈 상태 UI 구현
+- [x] 빈 상태 UI 구현
 
 ---
 
@@ -748,13 +762,12 @@ Phase 1 종료 시 아래가 가능해야 한다.
 
 세부 상태와 수용 기준은 `IMPLEMENTATION_CHECKLIST_v0.1.md`를 기준으로 본다. 아래는 Phase 0의 요약 task ID다.
 
-- [ ] `FND-01` App shell entry와 `src` 루트 생성
 - [x] `FND-01` App shell entry와 `src` 루트 생성
 - [x] `FND-02` Navigation shell과 4개 탭 구성
-- [ ] `FND-03` AppProviders, theme, 공통 UI 베이스
-- [ ] `DB-01` SQLite dependency와 DB client bootstrap
-- [ ] `DB-02` Migration runner와 `001_initial_schema`
-- [ ] `DB-03` Settings bootstrap과 DB readiness logging
+- [x] `FND-03` AppProviders, theme, 공통 UI 베이스
+- [x] `DB-01` SQLite dependency와 DB client bootstrap
+- [x] `DB-02` Migration runner와 `001_initial_schema`
+- [x] `DB-03` Settings bootstrap과 DB readiness logging
 
 ---
 
@@ -762,12 +775,12 @@ Phase 1 종료 시 아래가 가능해야 한다.
 
 세부 상태와 수용 기준은 `IMPLEMENTATION_CHECKLIST_v0.1.md`를 기준으로 본다. 아래는 Phase 1의 요약 task ID다.
 
-- [ ] `DOM-01` Domain enums/models와 상수 정의
-- [ ] `DOM-02` Form value types와 validation utilities
-- [ ] `GYM-01` Gym Setup form shell과 primary gym 조회
-- [ ] `GYM-02` Gym persistence와 edit flow
-- [ ] `COST-01` Costs list와 empty state
-- [ ] `COST-02` Add/Edit Cost Item form
+- [x] `DOM-01` Domain enums/models와 상수 정의
+- [x] `DOM-02` Form value types와 validation utilities
+- [x] `GYM-01` Gym Setup form shell과 primary gym 조회
+- [x] `GYM-02` Gym persistence와 edit flow
+- [x] `COST-01` Costs list와 empty state
+- [x] `COST-02` Add/Edit Cost Item form
 - [ ] `COST-03` Inactive/delete flow와 list refresh
 - [ ] `VISIT-01` Visits list와 empty state
 - [ ] `VISIT-02` Add/Edit Visit form과 duration derivation
