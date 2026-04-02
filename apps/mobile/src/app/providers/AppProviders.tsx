@@ -3,6 +3,7 @@ import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { bootstrapDatabase } from '../../data/db';
+import { PlatformServicesProvider } from '../../platform/services';
 import { ThemeProvider, appTheme } from '../../ui/theme';
 import {
   DatabaseBootstrapBoundary,
@@ -54,19 +55,21 @@ export function AppProviders({ children }: PropsWithChildren) {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <StatusBar
-          backgroundColor={appTheme.colors.background}
-          barStyle="dark-content"
-        />
-        <DatabaseBootstrapBoundary
-          onRetry={() => {
-            setDatabaseBootstrapAttempt(currentAttempt => currentAttempt + 1);
-          }}
-          status={databaseStatus}>
-          {children}
-        </DatabaseBootstrapBoundary>
-      </ThemeProvider>
+      <PlatformServicesProvider>
+        <ThemeProvider>
+          <StatusBar
+            backgroundColor={appTheme.colors.background}
+            barStyle="dark-content"
+          />
+          <DatabaseBootstrapBoundary
+            onRetry={() => {
+              setDatabaseBootstrapAttempt(currentAttempt => currentAttempt + 1);
+            }}
+            status={databaseStatus}>
+            {children}
+          </DatabaseBootstrapBoundary>
+        </ThemeProvider>
+      </PlatformServicesProvider>
     </SafeAreaProvider>
   );
 }

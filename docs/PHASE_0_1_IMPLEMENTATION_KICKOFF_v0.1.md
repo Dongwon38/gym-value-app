@@ -89,7 +89,7 @@
 - Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되어 있다.
 
 아직 미완료인 상태:
-- assisted check-in / platform service / release-ready native smoke QA
+- assisted check-in wiring / fallback polish / release-ready native smoke QA
 
 ---
 

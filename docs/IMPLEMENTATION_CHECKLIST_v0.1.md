@@ -90,7 +90,7 @@
 - Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되었다.
 
 ### 아직 미완료인 상태
-- assisted check-in / platform service / release-ready native smoke QA가 남아 있다.
+- assisted check-in wiring / fallback polish / release-ready native smoke QA가 남아 있다.
 
 ---
 
@@ -149,15 +149,14 @@
 
 ---
 
-## 5. Immediate Next 5 Tasks
+## 5. Immediate Remaining Tasks
 
-아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
+아래 작업들은 현재 저장소 상태에서 바로 이어서 진행할 수 있는 남은 우선 작업들이다.
 
-1. `AUTO-01` Platform service interfaces만 먼저 추가
-2. `AUTO-02` Prompt persistence와 active visit orchestration
-3. `AUTO-03` Geofence/notification wiring
-4. `AUTO-04` Assisted flow QA와 fallback polish
-5. `DOC-03` 문서 위생 후속 정리
+1. `AUTO-02` Prompt persistence와 active visit orchestration
+2. `AUTO-03` Geofence/notification wiring
+3. `AUTO-04` Assisted flow QA와 fallback polish
+4. `DOC-03` 문서 위생 후속 정리
 
 ---
 
@@ -380,7 +379,7 @@
 - Out of scope: geofence, notification actions, release signing
 
 ### `AUTO-01` Platform service interfaces만 먼저 추가
-- Status: `todo`
+- Status: `done`
 - Goal: 위치/알림 구현 전에 인터페이스와 경계를 고정한다.
 - Depends on: `KPI-04`
 - Scope: `PermissionService`, `LocationService`, `NotificationService`, `AppLifecycleService` 타입/계약 정의
