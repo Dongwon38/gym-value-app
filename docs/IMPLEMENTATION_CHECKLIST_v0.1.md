@@ -90,7 +90,7 @@
 - Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되었다.
 
 ### 아직 미완료인 상태
-- concrete native adapter smoke QA / fallback polish / release-ready native smoke QA가 남아 있다.
+- concrete native adapter smoke QA / `DOC-03` follow-up / release-ready native smoke QA가 남아 있다.
 
 ---
 
@@ -153,8 +153,7 @@
 
 아래 작업들은 현재 저장소 상태에서 바로 이어서 진행할 수 있는 남은 우선 작업들이다.
 
-1. `AUTO-04` Assisted flow QA와 fallback polish
-2. `DOC-03` 문서 위생 후속 정리
+1. `DOC-03` 문서 위생 후속 정리
 
 ---
 
@@ -404,12 +403,12 @@
 - Out of scope: 완전자동 visit 생성
 
 ### `AUTO-04` Assisted flow QA와 fallback polish
-- Status: `todo`
+- Status: `done`
 - Goal: 자동화 실패 시에도 manual-only 가치가 무너지지 않게 다듬는다.
 - Depends on: `AUTO-03`
 - Scope: permission denied UX, fallback copy, active visit restore, weird duration/recovery 후보 점검
 - Acceptance: 자동화가 실패해도 앱 전체 흐름이 usable하고 데이터 무결성이 유지된다.
-- Verification: 권한 거부, 알림 미수신, app restart, duplicate active visit 시나리오를 점검한다.
+- Verification: Settings fallback UI, Visits active-visit review warning, automated controller/UI tests, `ASSISTED_CHECKIN_QA_v0.1.md`로 증거를 정리한다.
 - Out of scope: release build, analytics integration
 
 ---

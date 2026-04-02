@@ -20,6 +20,10 @@ jest.mock('../../features/visits/useCases/visits', () => ({
   formatVisitWindow: jest.fn(() => '2026-04-02 10:00 to 11:00'),
 }));
 
+jest.mock('../../features/visits/useCases/sessionReview', () => ({
+  shouldReviewActiveVisit: jest.fn(() => false),
+}));
+
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
 
@@ -174,5 +178,8 @@ describe('VisitsScreen', () => {
     expect(JSON.stringify(renderer!.toJSON())).toContain('Current active visit');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Active');
     expect(JSON.stringify(renderer!.toJSON())).toContain('In progress');
+    expect(JSON.stringify(renderer!.toJSON())).toContain(
+      'restored from SQLite on app launch',
+    );
   });
 });

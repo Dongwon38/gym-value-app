@@ -11,6 +11,7 @@ import {
   formatVisitStatus,
   formatVisitWindow,
 } from '../../features/visits/useCases/visits';
+import { shouldReviewActiveVisit } from '../../features/visits/useCases/sessionReview';
 import { Card, EmptyState, PrimaryButton, ScreenContainer } from '../../ui/components';
 import { useAppTheme } from '../../ui/theme';
 
@@ -41,6 +42,8 @@ export function VisitsScreen() {
   const [cancelFeedback, setCancelFeedback] = useState<string | null>(null);
   const [cancellingVisitId, setCancellingVisitId] = useState<string | null>(null);
   const totalCount = visits.length;
+  const needsActiveVisitReview =
+    activeVisit !== null ? shouldReviewActiveVisit(activeVisit) : false;
 
   async function handleCancelVisit(visit: Visit) {
     setCancelState('saving');
@@ -131,8 +134,13 @@ export function VisitsScreen() {
             {formatVisitDuration(activeVisit.durationMinutes)}
           </Text>
           <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-            Only one active visit is allowed at a time. Edit this row to complete it or cancel it from the list below.
+            Active visits are restored from SQLite on app launch. If suggestions fail, you can still finish or cancel the session manually from this screen.
           </Text>
+          {needsActiveVisitReview ? (
+            <Text style={[styles.feedback, { color: theme.colors.warning }]}>
+              This active visit has been open for a long time. Review it now to avoid skewed duration and KPI calculations.
+            </Text>
+          ) : null}
         </Card>
       ) : null}
 

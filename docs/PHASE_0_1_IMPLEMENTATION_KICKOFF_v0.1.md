@@ -89,9 +89,11 @@
 - Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되어 있다.
 - `location_prompts` repository와 prompted visit start/complete/session restore application flow가 연결되어 있다.
 - assisted check-in controller/provider가 앱 부팅 이후 geofence sync, prompt insert, notification action handling 경계를 연결한다.
+- Settings에 assisted fallback 상태 섹션이 추가되었고, Visits에 장기 active visit review 경고와 restore copy가 추가되었다.
+- `ASSISTED_CHECKIN_QA_v0.1.md`가 추가되어 workspace-level 자동화 검증과 남은 device smoke 항목이 정리되었다.
 
 아직 미완료인 상태:
-- concrete native adapter smoke QA / fallback polish / release-ready native smoke QA
+- concrete native adapter smoke QA / 문서 위생 follow-up / release-ready native smoke QA
 
 ---
 
