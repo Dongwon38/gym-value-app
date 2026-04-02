@@ -1,4 +1,4 @@
-# Gym Value App — TECH_ARCHITECTURE v0.1
+# Gym Value App — Tech Architecture v0.1
 
 ## 문서 정보
 - 문서명: Technical Architecture
@@ -972,4 +972,3 @@ UI 메시지 예:
 ## 27. 관련 문서
 
 - **`DATA_MODEL_AND_CALCULATION_v0.1.md`** — SQLite schema, 테이블 관계, 비용·세금·KPI 계산 규칙의 단일 기준. 본 문서의 레이어·repository 역할과 함께 읽는다.
-

@@ -1,4 +1,4 @@
-# Gym Value App — DELIVERY_PLAN v0.1
+# Gym Value App — Delivery Plan v0.1
 
 ## 문서 정보
 - 문서명: Delivery Plan
@@ -679,6 +679,8 @@ Milestone 내부의 실제 구현 순서와 PR-sized task는 **`IMPLEMENTATION_C
 6. Phase 0 / Phase 1 Implementation Kickoff  
 7. Initial DB Schema SQL  
 8. Implementation Checklist  
-9. (향후) Repository / Use Case Scaffold 등  
+9. Manual MVP QA Report  
+10. Assisted Check-In QA  
+11. (향후) Repository / Use Case Scaffold 등  
 
 다음 단계에서는 **core 5종**을 기준으로 구현하고, 스키마 SQL·킥오프·implementation checklist는 같은 결정을 실행 단위로 풀어 쓴 companion으로 활용한다.

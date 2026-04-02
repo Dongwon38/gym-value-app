@@ -490,7 +490,9 @@ MVP에서는 세금을 단순 고정값으로 하드코딩하지 않는다.
 6. **Phase 0 / Phase 1 Implementation Kickoff** — 엔지니어링 관점 Phase 범위·파일 순서·체크리스트
 7. **Initial DB Schema SQL** — `001_initial_schema` 수준의 SQL 기준안
 8. **Implementation Checklist** — PR-sized task, live status, acceptance/verification 기준
-9. (향후) Repository / Use Case Scaffold 등 — 필요 시 추가
+9. **Manual MVP QA Report** — manual-only MVP 기준 automated/workspace QA evidence
+10. **Assisted Check-In QA** — assisted flow wiring과 fallback polish QA evidence
+11. (향후) Repository / Use Case Scaffold 등 — 필요 시 추가
 
 ### 15.2 문서 수 최소화 원칙
 - UX 관련 상세는 `Product Spec`에 묶는다

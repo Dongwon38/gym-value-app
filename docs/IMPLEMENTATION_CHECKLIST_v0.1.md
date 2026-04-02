@@ -1,4 +1,4 @@
-# Gym Value App — IMPLEMENTATION_CHECKLIST v0.1
+# Gym Value App — Implementation Checklist v0.1
 
 ## 문서 정보
 - 문서명: Implementation Checklist
@@ -151,9 +151,12 @@
 
 ## 5. Immediate Remaining Tasks
 
-아래 작업들은 현재 저장소 상태에서 바로 이어서 진행할 수 있는 남은 우선 작업들이다.
+현재 checklist 기준의 제품/앱 구현 작업은 완료되었다.
 
-1. `DOC-03` 문서 위생 후속 정리
+남은 후속은 아래와 같다.
+
+1. concrete native adapter smoke QA
+2. release-ready device smoke QA
 
 ---
 
@@ -178,12 +181,12 @@
 - Out of scope: 신규 제품 결정, Phase 2+ 세부 스펙 추가
 
 ### `DOC-03` 문서 위생 후속 정리
-- Status: `todo`
+- Status: `done`
 - Goal: 문서/템플릿 잔여물을 정리해 실행 문서 세트를 더 깔끔하게 만든다.
 - Depends on: `DOC-02`
 - Scope: 문서 제목 톤 점검, 템플릿성 문구 제거 후보 정리, `.DS_Store` 같은 잡파일 정리
-- Acceptance: 남은 문서 정리 작업 목록이 명확하고, 실행과 무관한 노이즈가 식별되어 있다.
-- Verification: follow-up diff 또는 이슈 목록으로 정리된다.
+- Acceptance: 문서 제목 톤이 정리되고, 템플릿성 README와 잡파일이 정리되어 문서 세트가 실제 프로젝트 상태를 반영한다.
+- Verification: `docs/.DS_Store` 제거, 문서 H1 정리, `apps/mobile/README.md` 프로젝트 기준 교체 diff로 확인한다.
 - Out of scope: 앱 로직 구현, 문서 대규모 재작성
 
 ### `FND-01` App shell entry와 `src` 루트 생성

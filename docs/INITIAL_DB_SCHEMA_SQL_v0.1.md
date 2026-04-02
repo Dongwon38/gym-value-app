@@ -1,4 +1,4 @@
-# INITIAL_DB_SCHEMA_SQL_v0.1
+# Gym Value App — Initial DB Schema v0.1
 
 ## 문서 정보
 - 문서명: Initial DB Schema SQL
@@ -551,4 +551,3 @@ for (const migration of migrationsSortedAsc) {
 - `001_initial_schema`만으로도 manual-first MVP를 바로 구현할 수 있다.
 
 이 스키마를 기준으로 앱 쪽에서는 DB 클라이언트·마이그레이션 러너·repository를 순서대로 붙이면 된다.
-

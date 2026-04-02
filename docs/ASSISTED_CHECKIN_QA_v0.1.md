@@ -1,4 +1,4 @@
-# Gym Value App - Assisted Check-In QA v0.1
+# Gym Value App — Assisted Check-In QA v0.1
 
 ## Scope
 - AUTO-03 controller/provider wiring

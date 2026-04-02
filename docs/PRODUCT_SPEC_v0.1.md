@@ -1,4 +1,4 @@
-# Gym Value App — PRODUCT_SPEC v0.1
+# Gym Value App — Product Spec v0.1
 
 ## 문서 정보
 - 문서명: Product Spec

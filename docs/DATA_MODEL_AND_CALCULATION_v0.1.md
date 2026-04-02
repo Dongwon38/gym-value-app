@@ -1,4 +1,4 @@
-# Gym Value App — DATA_MODEL_AND_CALCULATION v0.1
+# Gym Value App — Data Model and Calculation v0.1
 
 ## 문서 정보
 - 문서명: Data Model and Calculation
@@ -1052,4 +1052,3 @@ type DashboardStats = {
 ## 28. 관련 문서
 
 - **`DELIVERY_PLAN_v0.1.md`** — 마일스톤·구현 순서·체크리스트·QA·릴리즈. 본 문서의 schema·계산 규칙을 실행 계획으로 옮길 때 참고한다.
-
