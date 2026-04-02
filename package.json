@@ -1,0 +1,17 @@
+{
+  "name": "gym-value-app",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm run start -w apps/mobile",
+    "mobile:ios": "npm run ios -w apps/mobile",
+    "mobile:android": "npm run android -w apps/mobile",
+    "mobile:pod-install": "npm run pod-install -w apps/mobile"
+  },
+  "engines": {
+    "node": ">=22.11.0"
+  }
+}

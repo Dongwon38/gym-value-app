@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Env
+.env
+.env.*
+
+# Metro / RN
+.metro-health-check*
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+
+# Android
+*.apk
+*.aab
+local.properties
+.cxx/
+
+# Ruby / CocoaPods (optional local)
+vendor/bundle/
