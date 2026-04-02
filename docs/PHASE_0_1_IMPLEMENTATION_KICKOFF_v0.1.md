@@ -76,6 +76,7 @@
 - `domain/forms`와 `utils/validation`에 form value types, validation message constants, 순수 validator가 추가되어 있다.
 - Settings 탭에 Gym Setup shell과 primary gym read path가 연결되어 있다.
 - primary gym create/update persistence와 저장 성공/실패 피드백이 Settings 탭에 연결되어 있다.
+- Settings 탭에 최소 app settings form과 `getSettings` / `upsertSettings` read-write path가 연결되어 있다.
 - Costs 탭에 fee item read path, active-first list shell, empty state, add CTA entry point가 연결되어 있다.
 - Costs 탭에 fee item add/edit form과 create/update persistence가 연결되어 있다.
 - Costs 탭에 fee item inactive/delete path와 inactive history 표시 정책이 연결되어 있다.
@@ -84,7 +85,6 @@
 - Visits 탭에 cancel flow, active visit query, duplicate active guard가 연결되어 있다.
 
 아직 미완료인 상태:
-- settings repositories와 remaining CRUD
 - Home KPI / calculation layer
 
 ---
@@ -670,9 +670,9 @@ Phase 1에서는 Settings를 풀로 만들 필요는 없고, 아래만 있으면
 - fee item tax 상속의 기반이 생김
 
 ### 체크리스트
-- [ ] Settings form 최소 구현
-- [ ] getSettings 연결
-- [ ] upsertSettings 연결
+- [x] Settings form 최소 구현
+- [x] getSettings 연결
+- [x] upsertSettings 연결
 
 ---
 
@@ -789,7 +789,7 @@ Phase 1 종료 시 아래가 가능해야 한다.
 - [x] `VISIT-01` Visits list와 empty state
 - [x] `VISIT-02` Add/Edit Visit form과 duration derivation
 - [x] `VISIT-03` Cancel flow, duplicate active guard, list refresh
-- [ ] `SET-01` Minimal settings screen과 upsert
+- [x] `SET-01` Minimal settings screen과 upsert
 
 ---
 

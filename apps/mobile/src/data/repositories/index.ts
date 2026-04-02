@@ -7,6 +7,15 @@ export {
 } from './GymRepository';
 export type { GymRow, GymWriteInput } from './GymRepository';
 export {
+  getSettings,
+  mapAppSettingsRowToModel,
+  upsertSettings,
+} from './SettingsRepository';
+export type {
+  AppSettingsRow,
+  AppSettingsWriteInput,
+} from './SettingsRepository';
+export {
   createFeeItem,
   listFeeItems,
   mapFeeItemRowToModel,

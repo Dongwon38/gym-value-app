@@ -1,15 +1,17 @@
 import React from 'react';
 
 import { GymSetupSection } from '../../features/gym/components/GymSetupSection';
+import { AppSettingsSection } from '../../features/settings/components/AppSettingsSection';
 import { ScreenContainer } from '../../ui/components';
 
 export function SettingsScreen() {
   return (
     <ScreenContainer
-      description="Gym setup lands first on this tab. Locale, tax defaults, and tracking toggles will layer onto the same settings surface later."
+      description="App tax defaults and primary gym setup now share this tab. Tracking toggles can layer onto the same surface later."
       eyebrow="Settings"
       scroll
-      title="Set up your primary gym first.">
+      title="Tax defaults and primary gym setup live here.">
+      <AppSettingsSection />
       <GymSetupSection />
     </ScreenContainer>
   );

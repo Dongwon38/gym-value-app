@@ -77,6 +77,7 @@
 - `domain/forms`와 `utils/validation`에 form value types, validation message constants, 순수 validation helper가 추가되었다.
 - Settings 탭에 Gym Setup shell이 추가되었고 primary gym read path와 create/edit mode 전환이 연결되었다.
 - `GymRepository` write path와 primary gym create/update 규칙이 추가되었고, Gym Setup 저장 성공/실패 피드백이 연결되었다.
+- Settings 탭에 최소 app settings form이 추가되었고 `currency`, `locale`, `default_gst_rate`, `default_pst_rate` read/update가 연결되었다.
 - Costs 탭에 `fee_items` read path, active-first list shell, empty state, add CTA entry point, refresh hook가 연결되었다.
 - `FeeItemRepository` create/update path와 Costs add/edit form이 연결되었고, one-time/monthly/annual + tax mode + active state 저장이 가능해졌다.
 - fee item inactive/delete path와 active-first refresh가 연결되었고, inactive row는 history 용도로 계속 보이도록 정책이 고정되었다.
@@ -85,7 +86,6 @@
 - visit cancel path가 `cancelled` soft delete로 연결되었고, active visit query와 duplicate active guard가 add/edit flow에 연결되었다.
 
 ### 아직 미완료인 상태
-- settings repositories와 남은 settings CRUD 저장 플로우가 없다.
 - Home KPI와 calculation layer가 없다.
 
 ---
@@ -149,11 +149,11 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `SET-01` Minimal settings screen과 upsert
-2. `KPI-01` Fee occurrence expansion과 tax calculator
-3. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
-4. `KPI-03` Home screen KPI cards와 empty/error states
-5. `KPI-04` Manual MVP exit QA pass
+1. `KPI-01` Fee occurrence expansion과 tax calculator
+2. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
+3. `KPI-03` Home screen KPI cards와 empty/error states
+4. `KPI-04` Manual MVP exit QA pass
+5. `AUTO-01` Platform service interfaces만 먼저 추가
 
 ---
 
@@ -331,12 +331,12 @@
 - Out of scope: hard delete, overlap conflict resolution UX
 
 ### `SET-01` Minimal settings screen과 upsert
-- Status: `todo`
+- Status: `done`
 - Goal: tax default와 locale/currency를 UI에서 다룰 최소 기반을 만든다.
 - Depends on: `DB-03`, `FND-03`
 - Scope: `currency`, `locale`, `default_gst_rate`, `default_pst_rate` read/update
 - Acceptance: settings row를 읽고 수정한 뒤 재실행해도 유지된다.
-- Verification: 초기값 `CAD / en-CA / BC_CA / GST+PST`가 로드되고 수정 후 upsert가 반영된다.
+- Verification: `SettingsRepository` unit test에서 default row load/upsert를 확인하고, `saveAppSettings`와 `useAppSettingsForm` test에서 초기값 load와 수정 후 저장 피드백 상태를 확인한다.
 - Out of scope: permission toggles, tracking settings, about/help
 
 ### `KPI-01` Fee occurrence expansion과 tax calculator
