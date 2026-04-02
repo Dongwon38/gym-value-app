@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { GymFormValues } from '../../../domain/forms';
 import type { Gym } from '../../../domain/models';
+import { useAssistedCheckIn } from '../../../app/providers/AssistedCheckInContext';
 import {
   getValidationErrors,
   getValidationWarnings,
@@ -17,6 +18,7 @@ type GymSetupLoadState = 'loading' | 'ready' | 'error';
 type GymSetupSaveState = 'idle' | 'saving' | 'success' | 'error';
 
 export function useGymSetupForm() {
+  const { refresh } = useAssistedCheckIn();
   const [reloadToken, setReloadToken] = useState(0);
   const [loadState, setLoadState] = useState<GymSetupLoadState>('loading');
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -112,6 +114,7 @@ export function useGymSetupForm() {
             ? 'Primary gym updated.'
             : 'Primary gym created.',
         );
+        await refresh();
 
         return savedGym;
       } catch (error) {

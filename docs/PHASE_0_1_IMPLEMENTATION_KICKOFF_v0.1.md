@@ -88,9 +88,10 @@
 - Home 탭에 KPI cards, latest visit surface, retry state, gym/cost/visit empty state CTA가 연결되어 있다.
 - Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되어 있다.
 - `location_prompts` repository와 prompted visit start/complete/session restore application flow가 연결되어 있다.
+- assisted check-in controller/provider가 앱 부팅 이후 geofence sync, prompt insert, notification action handling 경계를 연결한다.
 
 아직 미완료인 상태:
-- native geofence/notification wiring / fallback polish / release-ready native smoke QA
+- concrete native adapter smoke QA / fallback polish / release-ready native smoke QA
 
 ---
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { AppSettingsFormValues } from '../../../domain/forms';
 import type { AppSettings } from '../../../domain/models';
+import { useAssistedCheckIn } from '../../../app/providers/AssistedCheckInContext';
 import { getAppSettings, mapAppSettingsToFormValues } from '../useCases/appSettings';
 import {
   AppSettingsFormValidationError,
@@ -13,6 +14,7 @@ type AppSettingsLoadState = 'loading' | 'ready' | 'error';
 type AppSettingsSaveState = 'idle' | 'saving' | 'success' | 'error';
 
 export function useAppSettingsForm() {
+  const { refresh } = useAssistedCheckIn();
   const [reloadToken, setReloadToken] = useState(0);
   const [loadState, setLoadState] = useState<AppSettingsLoadState>('loading');
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -96,6 +98,7 @@ export function useAppSettingsForm() {
         setFormValues(mapAppSettingsToFormValues(savedSettings));
         setSaveState('success');
         setSaveFeedback('Settings updated.');
+        await refresh();
 
         return savedSettings;
       } catch (error) {

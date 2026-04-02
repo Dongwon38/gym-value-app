@@ -90,7 +90,7 @@
 - Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되었다.
 
 ### 아직 미완료인 상태
-- native geofence/notification wiring / fallback polish / release-ready native smoke QA가 남아 있다.
+- concrete native adapter smoke QA / fallback polish / release-ready native smoke QA가 남아 있다.
 
 ---
 
@@ -153,9 +153,8 @@
 
 아래 작업들은 현재 저장소 상태에서 바로 이어서 진행할 수 있는 남은 우선 작업들이다.
 
-1. `AUTO-03` Geofence/notification wiring
-2. `AUTO-04` Assisted flow QA와 fallback polish
-3. `DOC-03` 문서 위생 후속 정리
+1. `AUTO-04` Assisted flow QA와 fallback polish
+2. `DOC-03` 문서 위생 후속 정리
 
 ---
 
@@ -396,12 +395,12 @@
 - Out of scope: 실제 background event 수신
 
 ### `AUTO-03` Geofence/notification wiring
-- Status: `todo`
+- Status: `done`
 - Goal: prompt 기반 check-in/check-out 제안을 실제 플랫폼과 연결한다.
 - Depends on: `AUTO-02`
-- Scope: permission flow, geofence register/remove, enter/exit event handling, notification action wiring
-- Acceptance: 실제 기기에서 enter -> suggestion -> check-in, exit -> suggestion 흐름이 동작한다.
-- Verification: Android 우선 수동 QA로 알림 표시와 action handling을 확인한다.
+- Scope: permission flow, geofence register/remove orchestration, enter/exit event handling, notification action wiring, app provider/controller integration
+- Acceptance: platform event -> prompt insert -> suggestion notification -> action-based visit transition wiring이 앱 코드에 연결된다.
+- Verification: stub platform service로 geofence sync, suggestion dispatch, action handling을 확인하고, concrete native smoke는 `AUTO-04`에서 별도 점검한다.
 - Out of scope: 완전자동 visit 생성
 
 ### `AUTO-04` Assisted flow QA와 fallback polish

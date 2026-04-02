@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { bootstrapDatabase } from '../../data/db';
 import { PlatformServicesProvider } from '../../platform/services';
 import { ThemeProvider, appTheme } from '../../ui/theme';
+import { AssistedCheckInProvider } from './AssistedCheckInProvider';
 import {
   DatabaseBootstrapBoundary,
   type DatabaseBootstrapStatus,
@@ -66,7 +67,7 @@ export function AppProviders({ children }: PropsWithChildren) {
               setDatabaseBootstrapAttempt(currentAttempt => currentAttempt + 1);
             }}
             status={databaseStatus}>
-            {children}
+            <AssistedCheckInProvider>{children}</AssistedCheckInProvider>
           </DatabaseBootstrapBoundary>
         </ThemeProvider>
       </PlatformServicesProvider>
