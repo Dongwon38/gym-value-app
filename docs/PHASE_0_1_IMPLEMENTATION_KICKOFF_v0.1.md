@@ -93,7 +93,7 @@
 - `ASSISTED_CHECKIN_QA_v0.1.md`가 추가되어 workspace-level 자동화 검증과 남은 device smoke 항목이 정리되었다.
 
 아직 미완료인 상태:
-- concrete native adapter smoke QA / 문서 위생 follow-up / release-ready native smoke QA
+- concrete native adapter 구현 / real-device assisted flow QA / release-ready native smoke QA
 
 ---
 
@@ -935,17 +935,17 @@ started_at / ended_at / duration_minutes 계산 규칙이 화면마다 달라지
 
 ## 23. Phase 0 / 1 이후 바로 이어질 다음 단계
 
-Phase 0 / 1이 끝나면 다음으로는 아래가 자연스럽다.
+현재 저장소 기준으로 Phase 0 / 1 이후의 자연스러운 다음 단계는 아래다.
 
-1. Dashboard calculations 구현
-2. Home KPI UI 구현
-3. active visit 기본 상태 처리
-4. location/notification integration 시작
+1. concrete Android / iOS permission, location, notification adapter 구현
+2. Android 우선 real-device geofence / notification / action QA
+3. iOS background / lifecycle parity QA
+4. release metadata, signing, icon, archive 점검
 
-즉, 다음에 필요하면 아래 companion 문서를 이어 쓸 수 있다(이미 존재하는 것은 재작성이 아니라 갱신).
+즉, 다음에 필요하면 아래 companion 문서를 계속 갱신하면 된다.
 - Implementation Checklist v0.1
-- Phase 2 이후 킥오프 문서(예: Assisted Check-In 중심)
-- Repository / Use Case Scaffold (미작성 시)
+- Assisted Check-In QA v0.1
+- Release prep / device QA 중심의 후속 문서(필요 시)
 
 ---
 

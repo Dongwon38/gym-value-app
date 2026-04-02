@@ -271,6 +271,11 @@ Milestone 내부의 실제 구현 순서와 PR-sized task는 **`IMPLEMENTATION_C
 
 ## 8. Milestone 4 — Assisted Check-In / Check-Out
 
+현재 상태:
+- `partial` (2026-04-02)
+- service contract, prompt persistence, controller/provider wiring, fallback UI, workspace automation coverage는 완료되었다.
+- concrete native adapter와 real-device geofence/notification QA는 아직 남아 있다.
+
 ## 8.1 목표
 위치/알림을 활용해 기록 마찰을 줄인다.
 
@@ -304,16 +309,16 @@ Milestone 내부의 실제 구현 순서와 PR-sized task는 **`IMPLEMENTATION_C
 - 종료 후 dashboard가 갱신됨
 
 ## 8.6 체크리스트
-- [ ] location permission 흐름 구현
-- [ ] notification permission 흐름 구현
-- [ ] geofence register/remove 구현
-- [ ] prompt insert 로직 구현
-- [ ] check-in suggestion notification 구현
-- [ ] notification action handler 구현
-- [ ] active visit create use case 연결
-- [ ] checkout suggestion notification 구현
-- [ ] complete visit use case 연결
-- [ ] app restart 후 active visit 복구 구현
+- [ ] location permission request UX 구현
+- [ ] notification permission request UX 구현
+- [ ] concrete geofence register/remove adapter 구현
+- [x] prompt insert 로직 구현
+- [x] check-in suggestion notification wiring 구현
+- [x] notification action handler 구현
+- [x] active visit create use case 연결
+- [x] checkout suggestion notification wiring 구현
+- [x] complete visit use case 연결
+- [x] app restart 후 active visit 복구 wiring 구현 (workspace scope)
 
 ## 8.7 QA 포인트
 - 권한 거부 상태에서 앱이 깨지지 않는지
@@ -334,6 +339,11 @@ Milestone 내부의 실제 구현 순서와 PR-sized task는 **`IMPLEMENTATION_C
 ---
 
 ## 9. Milestone 5 — QA, Polish, Release Readiness
+
+현재 상태:
+- `partial` (2026-04-02)
+- empty state / fallback copy, validation message baseline, long-running active visit warning, workspace automation QA 문서는 정리되었다.
+- release metadata, signing, concrete device smoke는 아직 남아 있다.
 
 ## 9.1 목표
 출시 가능한 수준으로 UX/안정성을 정리한다.
@@ -361,12 +371,12 @@ Milestone 내부의 실제 구현 순서와 PR-sized task는 **`IMPLEMENTATION_C
 - iOS archive/build 가능
 
 ## 9.5 체크리스트
-- [ ] empty state 카피 정리
-- [ ] validation message 정리
-- [ ] loading / disabled state 정리
-- [ ] lifecycle 복구 QA
-- [ ] duplicate active visit 방지 QA
-- [ ] weird duration 경고 QA
+- [x] empty state 카피 정리
+- [x] validation message 정리
+- [x] loading / disabled state 정리
+- [x] lifecycle 복구 QA (workspace automation scope)
+- [x] duplicate active visit 방지 QA (workspace automation scope)
+- [x] weird duration 경고 QA (workspace automation scope)
 - [ ] first-run onboarding QA
 - [ ] Android release signing 준비
 - [ ] iOS release/archive 설정 점검
@@ -503,42 +513,45 @@ Milestone 내부의 실제 구현 순서와 PR-sized task는 **`IMPLEMENTATION_C
 
 ## 14. QA 체크리스트
 
+아래에서 `[x]`는 현재 workspace automation 또는 문서화된 QA evidence 기준 완료를 의미한다.
+real-device 검증이 필요한 항목은 계속 `[ ]`로 남긴다.
+
 ## 14.1 Setup QA
 - [ ] 첫 실행 시 onboarding 흐름이 자연스러운가
 - [ ] gym 없이 Home 진입 시 안내가 적절한가
 - [ ] 비용 없이 KPI를 보려 할 때 안내가 적절한가
 
 ## 14.2 Visit QA
-- [ ] 수동 방문 추가가 정상 동작하는가
-- [ ] edit 후 duration이 재계산되는가
-- [ ] delete 후 통계가 즉시 갱신되는가
-- [ ] active visit 중 중복 생성이 차단되는가
-- [ ] active visit 복구가 동작하는가
+- [x] 수동 방문 추가가 정상 동작하는가
+- [x] edit 후 duration이 재계산되는가
+- [x] delete 후 통계가 즉시 갱신되는가
+- [x] active visit 중 중복 생성이 차단되는가
+- [x] active visit 복구가 동작하는가 (workspace automation scope)
 
 ## 14.3 Cost QA
-- [ ] monthly 비용이 예상대로 반복 계산되는가
-- [ ] annual 비용이 anniversary 기준으로 반영되는가
-- [ ] one-time 비용이 기간 안에서 1회 반영되는가
-- [ ] custom tax override가 반영되는가
+- [x] monthly 비용이 예상대로 반복 계산되는가
+- [x] annual 비용이 anniversary 기준으로 반영되는가
+- [x] one-time 비용이 기간 안에서 1회 반영되는가
+- [x] custom tax override가 반영되는가
 
 ## 14.4 Dashboard QA
-- [ ] total visits 계산이 맞는가
-- [ ] total duration 계산이 맞는가
-- [ ] cost per visit null 처리 기준이 맞는가
-- [ ] cost per hour null 처리 기준이 맞는가
-- [ ] current year 기준 계산이 맞는가
+- [x] total visits 계산이 맞는가
+- [x] total duration 계산이 맞는가
+- [x] cost per visit null 처리 기준이 맞는가
+- [x] cost per hour null 처리 기준이 맞는가
+- [x] current year 기준 계산이 맞는가
 
 ## 14.5 Location / Notification QA
 - [ ] notification permission이 없는 상태에서 깨지지 않는가
-- [ ] location permission이 없는 상태에서 manual mode로 정상 동작하는가
+- [x] location permission이 없는 상태에서 manual mode로 정상 동작하는가 (workspace automation scope)
 - [ ] geofence enter 시 check-in suggestion이 뜨는가
 - [ ] 알림 액션으로 visit가 시작되는가
 - [ ] exit 시 종료 제안이 뜨는가
 
 ## 14.6 Lifecycle QA
-- [ ] 앱 종료 후 재실행 시 active visit가 복구되는가
+- [x] 앱 종료 후 재실행 시 active visit가 복구되는가 (workspace automation scope)
 - [ ] background → foreground 복귀 시 timer UI가 자연스러운가
-- [ ] 비정상 장기 active visit가 검토 대상으로 표시되는가
+- [x] 비정상 장기 active visit가 검토 대상으로 표시되는가 (workspace automation scope)
 
 ---
 

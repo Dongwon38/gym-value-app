@@ -523,12 +523,13 @@ MVP에서는 세금을 단순 고정값으로 하드코딩하지 않는다.
 
 코어 5종은 아래 순서가 이해에 가장 자연스럽다(파일명은 저장소 `docs/` 기준).
 
-1. `PRODUCT_SPEC_v0.1.md`
-2. `TECH_ARCHITECTURE_v0.1.md`
-3. `DATA_MODEL_AND_CALCULATION_v0.1.md`
-4. `DELIVERY_PLAN_v0.1.md`
+1. `MASTER_PLAN_v0.1.md`
+2. `PRODUCT_SPEC_v0.1.md`
+3. `TECH_ARCHITECTURE_v0.1.md`
+4. `DATA_MODEL_AND_CALCULATION_v0.1.md`
+5. `DELIVERY_PLAN_v0.1.md`
 
-구현 보조 문서(Phase 0/1 Kickoff, Initial DB Schema SQL, Implementation Checklist 등)는 §15.1 **Implementation companion**을 본다.
+구현 보조 문서(Phase 0/1 Kickoff, Initial DB Schema SQL, Implementation Checklist, QA reports 등)는 §15.1 **Implementation companion**을 본다.
 
 ---
 

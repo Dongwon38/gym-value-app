@@ -90,7 +90,7 @@
 - Manual MVP QA report가 추가되었고 workspace automation scope 기준 exit evidence가 정리되었다.
 
 ### 아직 미완료인 상태
-- concrete native adapter smoke QA / `DOC-03` follow-up / release-ready native smoke QA가 남아 있다.
+- concrete native adapter 구현 / real-device assisted flow QA / release-ready native smoke QA가 남아 있다.
 
 ---
 
@@ -155,8 +155,10 @@
 
 남은 후속은 아래와 같다.
 
-1. concrete native adapter smoke QA
-2. release-ready device smoke QA
+1. `PermissionService`, `LocationService`, `NotificationService`의 concrete native adapter 구현
+2. Android 우선 real-device geofence / notification / action smoke QA
+3. iOS background / geofence / notification parity QA
+4. release-ready device smoke QA
 
 ---
 
