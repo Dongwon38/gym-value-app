@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { VisitEditorCard } from '../../features/visits/components/VisitEditorCard';
+import { useVisitForm } from '../../features/visits/hooks/useVisitForm';
 import { useVisits } from '../../features/visits/hooks/useVisits';
 import {
   formatVisitDuration,
@@ -12,29 +14,43 @@ import { useAppTheme } from '../../ui/theme';
 
 export function VisitsScreen() {
   const theme = useAppTheme();
-  const [isEntryPointOpen, setIsEntryPointOpen] = useState(false);
   const { activeCount, loadError, loadState, reload, visits } = useVisits();
+  const {
+    closeEditor,
+    derivedDurationMinutes,
+    editorMode,
+    errors,
+    formValues,
+    hasPrimaryGym,
+    primaryGym,
+    save,
+    saveFeedback,
+    saveState,
+    setFieldValue,
+    startCreate,
+    startEdit,
+  } = useVisitForm();
   const totalCount = visits.length;
 
   return (
     <ScreenContainer
-      description="Manual visit records now load from SQLite in newest-first order. The next task will attach the add/edit form to this same screen."
+      description="Manual visit records now load from SQLite and can be created or edited from this screen."
       eyebrow="Visits"
       scroll
       title="Manual visit tracking will live here.">
       <Card
-        subtitle="Read path, default empty state, and refresh are live. VISIT-02 will plug the add/edit form into this surface."
+        subtitle="Read path, add/edit form wiring, and refresh are live. VISIT-03 will add cancel and active-visit rules to the same surface."
         title="Visit feed overview">
         <Text style={[styles.note, { color: theme.colors.textSecondary }]}>
           {totalCount === 0
-            ? 'No saved visits yet. Use the entry point below to reserve the manual add flow for the next task.'
+            ? 'No saved visits yet. Open the editor below to create the first completed visit for your primary gym.'
             : `${totalCount} visit${totalCount === 1 ? '' : 's'} loaded. ${activeCount} active and ${totalCount - activeCount} completed.`}
         </Text>
         <View style={[styles.actions, { marginTop: theme.spacing.lg }]}>
           <PrimaryButton
             label="Add Visit"
             onPress={() => {
-              setIsEntryPointOpen(true);
+              startCreate();
             }}
           />
           <Pressable
@@ -53,36 +69,26 @@ export function VisitsScreen() {
         </View>
       </Card>
 
-      {isEntryPointOpen ? (
-        <Card
-          subtitle="VISIT-02 will replace this helper card with the actual visit editor fields and save flow."
-          title="Visit form entry point">
-          <Text style={[styles.note, { color: theme.colors.textSecondary }]}>
-            The add CTA is now connected so the next task only needs to attach
-            date/time inputs, duration derivation, and DB writes.
-          </Text>
-          <View style={[styles.actions, { marginTop: theme.spacing.lg }]}>
-            <PrimaryButton
-              label="Refresh After Save"
-              onPress={() => {
-                reload();
-              }}
-            />
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setIsEntryPointOpen(false);
-              }}
-              style={({ pressed }) => [
-                styles.inlineAction,
-                { opacity: pressed ? 0.7 : 1 },
-              ]}>
-              <Text style={[styles.inlineActionLabel, { color: theme.colors.textMuted }]}>
-                Close Entry Point
-              </Text>
-            </Pressable>
-          </View>
-        </Card>
+      {editorMode !== 'closed' ? (
+        <VisitEditorCard
+          derivedDurationMinutes={derivedDurationMinutes}
+          editorMode={editorMode}
+          formValues={formValues}
+          hasPrimaryGym={hasPrimaryGym}
+          onClose={closeEditor}
+          onSave={async () => {
+            const savedVisit = await save();
+
+            if (savedVisit) {
+              await reload();
+            }
+          }}
+          onSetFieldValue={setFieldValue}
+          primaryGymName={primaryGym?.name}
+          saveFeedback={saveFeedback}
+          saveState={saveState}
+          validationErrors={errors}
+        />
       ) : null}
 
       {loadState === 'loading' ? (
@@ -115,10 +121,10 @@ export function VisitsScreen() {
 
       {loadState === 'ready' && visits.length === 0 ? (
         <EmptyState
-          actionLabel="Open Visit Entry"
-          body="No saved visits exist yet. The list query and refresh flow are ready; VISIT-02 will plug the add/edit form into this entry point."
+          actionLabel="Add Visit"
+          body="No saved visits exist yet. This screen now saves completed manual visits and derives duration from the entered times."
           onActionPress={() => {
-            setIsEntryPointOpen(true);
+            startCreate();
           }}
           title="No visits saved yet"
         />
@@ -154,6 +160,14 @@ export function VisitsScreen() {
               <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
                 Source: {visit.source}
               </Text>
+              <View style={[styles.actions, { marginTop: theme.spacing.lg }]}>
+                <PrimaryButton
+                  label="Edit Visit"
+                  onPress={() => {
+                    startEdit(visit);
+                  }}
+                />
+              </View>
             </Card>
           ))
         : null}

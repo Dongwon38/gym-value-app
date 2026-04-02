@@ -81,9 +81,10 @@
 - `FeeItemRepository` create/update path와 Costs add/edit form이 연결되었고, one-time/monthly/annual + tax mode + active state 저장이 가능해졌다.
 - fee item inactive/delete path와 active-first refresh가 연결되었고, inactive row는 history 용도로 계속 보이도록 정책이 고정되었다.
 - Visits 탭에 `visits` read path, cancelled 제외 기본 리스트, newest-first list shell, empty state, add CTA entry point, refresh hook가 연결되었다.
+- `VisitRepository` create/update path와 Visits add/edit form이 연결되었고, completed visit의 `duration_minutes`가 `started_at/ended_at`로부터 자동 계산된다.
 
 ### 아직 미완료인 상태
-- visit write-path, settings repositories와 남은 CRUD 저장 플로우가 없다.
+- visit cancel/active-guard path, settings repositories와 남은 CRUD 저장 플로우가 없다.
 - Home KPI와 calculation layer가 없다.
 
 ---
@@ -147,11 +148,11 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `VISIT-02` Add/Edit Visit form과 duration derivation
-2. `VISIT-03` Cancel flow, duplicate active guard, list refresh
-3. `SET-01` Minimal settings screen과 upsert
-4. `KPI-01` Fee occurrence expansion과 tax calculator
-5. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
+1. `VISIT-03` Cancel flow, duplicate active guard, list refresh
+2. `SET-01` Minimal settings screen과 upsert
+3. `KPI-01` Fee occurrence expansion과 tax calculator
+4. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
+5. `KPI-03` Home screen KPI cards와 empty/error states
 
 ---
 
@@ -311,12 +312,12 @@
 - Out of scope: filter chips, recovery candidates
 
 ### `VISIT-02` Add/Edit Visit form과 duration derivation
-- Status: `todo`
+- Status: `done`
 - Goal: 수동 방문 추가/수정의 핵심 입력 흐름을 완성한다.
 - Depends on: `VISIT-01`, `DOM-02`, `GYM-02`
 - Scope: `date/started_at/ended_at/gym_id/notes` 입력, derived `duration_minutes`, form validation
 - Acceptance: 시작/종료 입력으로만 visit를 저장/수정할 수 있고 duration은 자동 계산된다.
-- Verification: 저장 후 DB row의 `status = completed`, `duration_minutes > 0`, invalid time 차단 확인
+- Verification: `saveVisit` unit test에서 duration derivation과 create/update를 확인하고, `VisitRepository` write-path test와 `VisitsScreen` editor 렌더를 통해 completed visit 저장 흐름을 확인한다.
 - Out of scope: active visit timer, auto check-in
 
 ### `VISIT-03` Cancel flow, duplicate active guard, list refresh

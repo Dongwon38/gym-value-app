@@ -2,6 +2,10 @@ jest.mock('../../features/visits/hooks/useVisits', () => ({
   useVisits: jest.fn(),
 }));
 
+jest.mock('../../features/visits/hooks/useVisitForm', () => ({
+  useVisitForm: jest.fn(),
+}));
+
 jest.mock('../../features/visits/useCases/visits', () => ({
   formatVisitDuration: jest.fn(() => '1 hr'),
   formatVisitStatus: jest.fn(() => 'Completed'),
@@ -21,6 +25,7 @@ jest.mock('react-native-safe-area-context', () => {
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 
+import { useVisitForm } from '../../features/visits/hooks/useVisitForm';
 import { useVisits } from '../../features/visits/hooks/useVisits';
 import { VisitsScreen } from './VisitsScreen';
 
@@ -46,7 +51,27 @@ describe('VisitsScreen', () => {
     jest.clearAllMocks();
   });
 
+  function mockClosedEditor() {
+    (useVisitForm as jest.Mock).mockReturnValue({
+      closeEditor: jest.fn(),
+      derivedDurationMinutes: null,
+      editingVisit: null,
+      editorMode: 'closed',
+      errors: [],
+      formValues: null,
+      hasPrimaryGym: true,
+      primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
+      save: jest.fn(),
+      saveFeedback: null,
+      saveState: 'idle',
+      setFieldValue: jest.fn(),
+      startCreate: jest.fn(),
+      startEdit: jest.fn(),
+    });
+  }
+
   it('renders the empty state when no visits exist', async () => {
+    mockClosedEditor();
     (useVisits as jest.Mock).mockReturnValue({
       activeCount: 0,
       loadError: null,
@@ -63,10 +88,11 @@ describe('VisitsScreen', () => {
     });
 
     expect(JSON.stringify(renderer!.toJSON())).toContain('No visits saved yet');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Open Visit Entry');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Add Visit');
   });
 
   it('renders saved visit rows when visits exist', async () => {
+    mockClosedEditor();
     (useVisits as jest.Mock).mockReturnValue({
       activeCount: 0,
       loadError: null,
@@ -85,5 +111,6 @@ describe('VisitsScreen', () => {
     expect(JSON.stringify(renderer!.toJSON())).toContain('Upper body');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Completed');
     expect(JSON.stringify(renderer!.toJSON())).toContain('1 hr');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Edit Visit');
   });
 });
