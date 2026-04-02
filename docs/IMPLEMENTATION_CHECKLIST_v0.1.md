@@ -85,9 +85,10 @@
 - `VisitRepository` create/update path와 Visits add/edit form이 연결되었고, completed visit의 `duration_minutes`가 `started_at/ended_at`로부터 자동 계산된다.
 - visit cancel path가 `cancelled` soft delete로 연결되었고, active visit query와 duplicate active guard가 add/edit flow에 연결되었다.
 - domain calculation layer에 fee tax resolution, one-time/monthly/annual occurrence expansion, total paid 계산 함수가 추가되었다.
+- dashboard stats assembly와 Home query use case가 추가되었고, current year 기준 KPI 모델 조립이 가능해졌다.
 
 ### 아직 미완료인 상태
-- Home KPI 화면과 dashboard stats assembly가 없다.
+- Home KPI 화면과 Manual MVP QA pass가 남아 있다.
 
 ---
 
@@ -150,11 +151,11 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
-2. `KPI-03` Home screen KPI cards와 empty/error states
-3. `KPI-04` Manual MVP exit QA pass
-4. `AUTO-01` Platform service interfaces만 먼저 추가
-5. `AUTO-02` Prompt persistence와 active visit orchestration
+1. `KPI-03` Home screen KPI cards와 empty/error states
+2. `KPI-04` Manual MVP exit QA pass
+3. `AUTO-01` Platform service interfaces만 먼저 추가
+4. `AUTO-02` Prompt persistence와 active visit orchestration
+5. `AUTO-03` Geofence/notification wiring
 
 ---
 
@@ -350,12 +351,12 @@
 - Out of scope: UI formatting, chart, forecast
 
 ### `KPI-02` Dashboard stats assembly
-- Status: `todo`
+- Status: `done`
 - Goal: visits와 fee_items를 결합해 Home용 stats를 조립한다.
 - Depends on: `VISIT-03`, `KPI-01`
 - Scope: `totalVisits`, `totalDuration`, `uniqueVisitDays`, `averageVisitLength`, `costPerVisit`, `costPerHour`, `latestVisitAt`
 - Acceptance: 기본 range `current_year` 기준 `DashboardStats`를 일관되게 계산할 수 있다.
-- Verification: 비용 없음/방문 없음/active visit 존재/연도 경계 시나리오를 테스트한다.
+- Verification: `dashboard.test.ts`와 `features/home/useCases/dashboard.test.ts`에서 비용 없음, 방문 없음, active visit 존재, current year 경계와 snapshot 조립 시나리오를 확인한다.
 - Out of scope: filters UI, month switcher
 
 ### `KPI-03` Home KPI screen과 empty/error states

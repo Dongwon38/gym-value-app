@@ -84,9 +84,10 @@
 - Visits 탭에 completed visit add/edit form과 duration derivation이 연결되어 있다.
 - Visits 탭에 cancel flow, active visit query, duplicate active guard가 연결되어 있다.
 - domain calculation layer에 fee tax resolution과 occurrence expansion 함수가 연결되어 있다.
+- dashboard stats assembly와 Home query use case가 연결되어 있다.
 
 아직 미완료인 상태:
-- Home KPI / dashboard stats assembly
+- Home KPI / Manual MVP QA pass
 
 ---
 

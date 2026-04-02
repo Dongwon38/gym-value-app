@@ -12,6 +12,17 @@ export {
   isDateWithinRange,
   parseDateOnlyParts,
 } from './dateRange';
+export {
+  buildDashboardStats,
+  calculateAverageVisitLength,
+  calculateCostPerActiveDay,
+  calculateCostPerHour,
+  calculateCostPerVisit,
+  countUniqueVisitDays,
+  getCompletedVisitsInRange,
+  resolveDashboardRange,
+  sumDurationMinutes,
+} from './dashboard';
 export type {
   EffectiveTaxRates,
   FeeItemOccurrence,
