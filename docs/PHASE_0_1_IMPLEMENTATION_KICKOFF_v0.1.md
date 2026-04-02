@@ -83,9 +83,10 @@
 - Visits 탭에 visit read path, cancelled 제외 기본 리스트, newest-first list shell, empty state, add CTA entry point가 연결되어 있다.
 - Visits 탭에 completed visit add/edit form과 duration derivation이 연결되어 있다.
 - Visits 탭에 cancel flow, active visit query, duplicate active guard가 연결되어 있다.
+- domain calculation layer에 fee tax resolution과 occurrence expansion 함수가 연결되어 있다.
 
 아직 미완료인 상태:
-- Home KPI / calculation layer
+- Home KPI / dashboard stats assembly
 
 ---
 

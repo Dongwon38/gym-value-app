@@ -84,9 +84,10 @@
 - Visits 탭에 `visits` read path, cancelled 제외 기본 리스트, newest-first list shell, empty state, add CTA entry point, refresh hook가 연결되었다.
 - `VisitRepository` create/update path와 Visits add/edit form이 연결되었고, completed visit의 `duration_minutes`가 `started_at/ended_at`로부터 자동 계산된다.
 - visit cancel path가 `cancelled` soft delete로 연결되었고, active visit query와 duplicate active guard가 add/edit flow에 연결되었다.
+- domain calculation layer에 fee tax resolution, one-time/monthly/annual occurrence expansion, total paid 계산 함수가 추가되었다.
 
 ### 아직 미완료인 상태
-- Home KPI와 calculation layer가 없다.
+- Home KPI 화면과 dashboard stats assembly가 없다.
 
 ---
 
@@ -149,11 +150,11 @@
 
 아래 5개는 현재 저장소 상태에서 바로 시작 가능한 첫 작업들이다.
 
-1. `KPI-01` Fee occurrence expansion과 tax calculator
-2. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
-3. `KPI-03` Home screen KPI cards와 empty/error states
-4. `KPI-04` Manual MVP exit QA pass
-5. `AUTO-01` Platform service interfaces만 먼저 추가
+1. `KPI-02` Dashboard selectors와 null-safe KPI 모델링
+2. `KPI-03` Home screen KPI cards와 empty/error states
+3. `KPI-04` Manual MVP exit QA pass
+4. `AUTO-01` Platform service interfaces만 먼저 추가
+5. `AUTO-02` Prompt persistence와 active visit orchestration
 
 ---
 
@@ -340,12 +341,12 @@
 - Out of scope: permission toggles, tracking settings, about/help
 
 ### `KPI-01` Fee occurrence expansion과 tax calculator
-- Status: `todo`
+- Status: `done`
 - Goal: 비용 계산의 핵심 순수 함수를 먼저 완성한다.
 - Depends on: `COST-03`, `SET-01`
 - Scope: effective tax resolution, one-time/monthly/annual occurrence expansion, total paid calculation
 - Acceptance: BC 기본 preset과 custom tax override가 문서 규칙대로 계산된다.
-- Verification: example scenario tests로 monthly/annual/one-time 총액이 문서 예시와 맞는지 확인한다.
+- Verification: `fees.test.ts`에서 BC 기본 preset 세율, custom tax override, monthly/annual/one-time occurrence expansion과 total paid 예시 계산을 확인한다.
 - Out of scope: UI formatting, chart, forecast
 
 ### `KPI-02` Dashboard stats assembly
