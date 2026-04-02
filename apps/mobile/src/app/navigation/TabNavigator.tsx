@@ -5,6 +5,7 @@ import { CostsScreen } from '../../screens/costs/CostsScreen';
 import { HomeScreen } from '../../screens/home/HomeScreen';
 import { SettingsScreen } from '../../screens/settings/SettingsScreen';
 import { VisitsScreen } from '../../screens/visits/VisitsScreen';
+import { appTheme } from '../../ui/theme';
 import { MainTabParamList } from './navigationTypes';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -16,21 +17,21 @@ export function TabNavigator() {
       screenOptions={{
         headerShadowVisible: false,
         headerStyle: {
-          backgroundColor: '#FFFCF5',
+          backgroundColor: appTheme.colors.surface,
         },
         headerTitleStyle: {
-          color: '#1F1A14',
+          color: appTheme.colors.textPrimary,
           fontSize: 18,
           fontWeight: '600',
         },
-        tabBarActiveTintColor: '#2F6A5E',
+        tabBarActiveTintColor: appTheme.colors.accent,
         tabBarInactiveTintColor: '#776B5B',
         tabBarStyle: {
-          backgroundColor: '#FFFCF5',
-          borderTopColor: '#D9D0C2',
+          backgroundColor: appTheme.colors.surface,
+          borderTopColor: appTheme.colors.border,
         },
         sceneStyle: {
-          backgroundColor: '#F4F1EA',
+          backgroundColor: appTheme.colors.background,
         },
       }}>
       <Tab.Screen component={HomeScreen} name="Home" />

@@ -1,51 +1,36 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text } from 'react-native';
+
+import { Card, EmptyState, ScreenContainer } from '../../ui/components';
+import { useAppTheme } from '../../ui/theme';
 
 export function HomeScreen() {
+  const theme = useAppTheme();
+
   return (
-    <SafeAreaView edges={['bottom']} style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.eyebrow}>Home</Text>
-        <Text accessibilityRole="header" style={styles.title}>
-          Your gym value dashboard starts here.
+    <ScreenContainer
+      description="KPI cards, check-in state, and summary metrics will land on this tab."
+      eyebrow="Home"
+      title="Your gym value dashboard starts here.">
+      <Card
+        subtitle="The main KPI card, active visit state, and summary rows will replace this placeholder."
+        title="Primary KPI Surface">
+        <Text style={[styles.note, { color: theme.colors.textSecondary }]}>
+          This tab is now using the shared screen container and card styles from
+          the theme layer.
         </Text>
-        <Text style={styles.body}>
-          KPI cards, check-in state, and summary metrics will land on this tab.
-        </Text>
-      </View>
-    </SafeAreaView>
+      </Card>
+      <EmptyState
+        actionLabel="Set Up Home"
+        body="As soon as the dashboard queries are ready, this state will turn into metric cards and contextual CTAs."
+        title="Home content is not wired yet"
+      />
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F4F1EA',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 28,
-  },
-  eyebrow: {
-    marginBottom: 10,
-    color: '#6F6455',
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  title: {
-    marginBottom: 12,
-    color: '#1F1A14',
-    fontSize: 31,
-    fontWeight: '700',
-    lineHeight: 38,
-  },
-  body: {
-    color: '#4C4337',
-    fontSize: 16,
-    lineHeight: 24,
+  note: {
+    lineHeight: 22,
   },
 });
