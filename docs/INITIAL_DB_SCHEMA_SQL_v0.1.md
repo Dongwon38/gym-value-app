@@ -105,7 +105,7 @@ SQLite에서는 boolean 대신 `INTEGER`를 사용한다.
 - 미래 날짜/시간 금지
 - active visit가 정확히 1개 이하인지의 전역 정책
 - 동일 시간대 visit overlap 금지
-- annual/monthly occurrence 계산 규칙
+- bi-weekly/annual/monthly occurrence 계산 규칙
 
 이런 것은 application / repository / validation layer에서 처리한다.
 
@@ -318,6 +318,8 @@ CREATE INDEX IF NOT EXISTS idx_location_prompts_related_visit_id ON location_pro
 - 제품 문서의 category / cadence / tax_mode를 enum처럼 제한했다.
 - `custom` 세금일 때만 `gst_rate`, `pst_rate` 존재를 요구한다.
 - `end_date >= start_date`까지만 DB에서 강제한다.
+- 현재 `001_initial_schema`는 manual MVP 기준이므로 cadence/tax_mode를 더 좁게 유지한다.
+- 다음 local expansion에서는 additive migration으로 `bi_weekly`, `tax_mode = none`, `billing_anchor_date`를 확장한다.
 
 의도적 단순화:
 - 세율 upper bound는 두지 않았다.
@@ -478,7 +480,7 @@ for (const migration of migrationsSortedAsc) {
 
 - `visits.deleted_at`
 - `visits.created_by`
-- `fee_items.billing_anchor_day`
+- `fee_items.billing_anchor_date`
 - `fee_items.is_tax_included`
 - `gyms.address`
 - `gyms.place_id`
@@ -489,6 +491,15 @@ for (const migration of migrationsSortedAsc) {
 - 지금 넣어도 당장 쓰지 않는다.
 - schema를 불필요하게 무겁게 만들 수 있다.
 - additive migration으로 나중에 충분히 붙일 수 있다.
+
+### 12.1 다음 local expansion에 잠근 additive migration
+초기 `001_initial_schema`는 그대로 유지하되, 다음 비용 입력 확장 블록에서는 아래 변경을 additive migration으로 반영한다.
+
+- `fee_items.cadence`에 `bi_weekly` 추가
+- `fee_items.tax_mode`에 `none` 추가
+- `fee_items.billing_anchor_date` nullable 추가
+
+즉, 이 문서는 **초기 schema의 사실성**을 유지하면서도, 다음 비용 확장 방향은 별도 migration으로 잠가 둔다.
 
 ---
 

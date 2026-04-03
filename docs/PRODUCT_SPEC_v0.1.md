@@ -284,6 +284,19 @@ MVP에서는 이 기능이 없어도 되지만, 설계상 고려한다.
 - PT
 - Other
 
+### 8.3.1 Starter cost line 기본값
+다음 local expansion 블록에서는 Costs 입력의 기본 진입을 아래 4개 starter line으로 고정한다.
+
+- `Monthly Membership` → 기본 cadence `bi-weekly`
+- `Sign-up Fee` → 기본 cadence `one-time`
+- `Annual Fee` → 기본 cadence `annual`
+- `Locker Fee` → 기본 cadence `monthly`
+
+원칙:
+- starter line은 UI preset이지 별도 엔티티가 아니다.
+- 사용자가 금액을 입력하지 않고 비워 둔 starter line은 저장하지 않는다.
+- PT와 Other는 `Add custom cost line` 흐름으로 계속 추가할 수 있다.
+
 ### 8.4 사용자 정의 항목 (비용 라인)
 사용자는 `Other` 카테고리 또는 표시용 **커스텀 label**을 통해 자유롭게 **비용 항목(라인)**을 추가할 수 있어야 한다. 이는 “사용자가 스스로 항목을 정의한다”는 의미이며, **`fee_items.cadence` 값이 `custom`인 것과는 별개**다(§8.6.1 참고).
 
@@ -297,33 +310,47 @@ MVP에서는 이 기능이 없어도 되지만, 설계상 고려한다.
 각 비용 항목은 아래 값을 가진다.
 - label
 - category
-- amount
+- amount (pre-tax)
 - cadence
 - start date
 - end date (optional)
+- billing anchor date (optional)
 - tax mode
 - active 여부
 
 ### 8.6 cadence 종류
+현재 shipped manual MVP는 `one-time`, `monthly`, `annual`까지만 구현되어 있지만, 다음 local expansion 블록부터 아래 cadence를 제품 기본값으로 채택한다.
+
 - one-time
+- bi-weekly
 - monthly
 - annual
 - `custom` — 스키마·데이터 모델 상 enum으로는 존재할 수 있으나, **v0.1 UI에서는 선택지로 노출하지 않는다**. 계산 규칙도 v0.1에서 확정하지 않는다(Data Model §13.5).
 
 ### 8.6.1 「사용자 정의 항목」과 `cadence = custom` 구분
-| 구분 | 의미 | v0.1 |
+| 구분 | 의미 | 정책 |
 |------|------|------|
 | 사용자 정의 비용 **라인** | §8.4 — Other·label로 추가하는 항목 | 허용·UI 제공 |
-| `cadence = custom` | 반복 규칙 enum 중 하나 | 스키마만, UI·계산 규칙 미확정 |
+| `cadence = custom` | 반복 규칙 enum 중 하나 | 스키마 reserve, UI·계산 규칙 미확정 |
 
 ### 8.7 세금 설정 UX
-각 비용 항목은 아래 둘 중 하나를 선택한다.
+각 비용 항목은 아래 셋 중 하나를 선택한다.
 - inherit app default
+- no tax
 - custom tax
 
 custom tax 선택 시:
 - GST rate
 - PST rate
+
+no tax 선택 시:
+- 해당 line은 세금을 적용하지 않는다.
+- GST/PST 입력은 숨기거나 비운다.
+
+### 8.7.1 금액 입력 원칙
+- 사용자는 항상 **세전 금액**을 입력한다.
+- 앱은 line별 **세후 금액 preview**를 계산해 보여준다.
+- `tax-inclusive` 입력은 이 블록 범위에 포함하지 않는다.
 
 ### 8.8 삭제와 비활성화
 비용 항목은 완전 삭제 또는 inactive 처리 가능
@@ -429,30 +456,40 @@ gym 설정, 권한, 알림, 기본 세금, 앱 환경 값을 관리한다. **비
 
 ---
 
-## 11. Add / Edit Cost Item 화면 명세
+## 11. Costs 입력 화면 명세
 
-### 11.1 입력 필드
+### 11.1 기본 화면 구조
+- starter line 4종을 먼저 보여준다.
+- 각 line은 `enabled / disabled` 상태를 가질 수 있다.
+- 필요하면 `Add custom cost line`으로 추가 line을 만든다.
+
+### 11.2 line별 입력 필드
 - label
 - category
-- amount
+- amount (pre-tax)
 - cadence
 - start date
 - end date (optional)
+- billing anchor date (optional, annual / bi-weekly 우선)
 - tax mode
 - GST/PST (custom일 때)
 - active
 
-### 11.2 입력 원칙
-- amount는 숫자만 허용
+### 11.3 입력 원칙
+- amount는 세전 숫자만 허용
 - 음수 불가
 - cadence에 따라 필요한 필드만 보여줌
+- annual / bi-weekly에서는 billing anchor date를 optional로 둘 수 있음
+- 세후 금액 preview를 line별로 보여줌
+- 비어 있는 starter line은 저장하지 않음
 
-### 11.3 예시 UX
+### 11.4 예시 UX
 예:
 - Label: `Monthly Membership`
 - Amount: `$49.99`
-- Cadence: `Monthly`
+- Cadence: `Bi-weekly`
 - Tax: `Use app default`
+- After Tax Preview: `$55.98`
 
 ---
 

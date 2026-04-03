@@ -206,6 +206,10 @@ CREATE TABLE location_prompts (
 - membership 및 기타 gym 관련 비용 항목 저장
 - 총 비용 계산의 핵심 원천 데이터
 
+### 상태 메모
+- 현재 shipped `001_initial_schema`는 `one_time | monthly | annual` cadence와 `inherit_default | custom` tax mode만 실제로 담고 있다.
+- 아래 권장 필드 집합은 다음 local expansion 블록에서 additive migration으로 맞출 target shape다.
+
 ### 권장 필드
 ```sql
 CREATE TABLE fee_items (
@@ -217,6 +221,7 @@ CREATE TABLE fee_items (
   cadence TEXT NOT NULL,
   start_date TEXT NOT NULL,
   end_date TEXT,
+  billing_anchor_date TEXT,
   tax_mode TEXT NOT NULL DEFAULT 'inherit_default',
   gst_rate REAL,
   pst_rate REAL,
@@ -232,19 +237,22 @@ CREATE TABLE fee_items (
 - `category`: `monthly_membership | annual_fee | signup_fee | locker_fee | pt | other`
 - `label`: 화면 노출용 이름
 - `amount_pre_tax`: 세전 금액
-- `cadence`: `one_time | monthly | annual | custom` — 여기서 마지막 `custom`은 **반복 규칙(cadence)의 enum 값**이며, Product Spec의 “사용자 정의 비용 라인”과 동일어가 아니다(본 문서 §13.5).
+- `cadence`: `one_time | bi_weekly | monthly | annual | custom` — 여기서 마지막 `custom`은 **반복 규칙(cadence)의 enum 값**이며, Product Spec의 “사용자 정의 비용 라인”과 동일어가 아니다(본 문서 §13.5).
 - `start_date`: 비용 유효 시작일
 - `end_date`: 종료일. ongoing이면 null 가능
-- `tax_mode`: `inherit_default | custom`
-- `gst_rate`, `pst_rate`: custom일 때 override 값
+- `billing_anchor_date`: recurrence anchor. null이면 `start_date`를 anchor fallback으로 사용
+- `tax_mode`: `inherit_default | none | custom`
+- `gst_rate`, `pst_rate`: custom일 때 override 값. `inherit_default` / `none`일 때는 null 권장
 - `is_active`: 현재 사용 여부
 - `sort_order`: UI 정렬
 
 ### 제약/원칙
 - `amount_pre_tax`는 음수 불가
 - `cadence = one_time`일 경우, 시작일 기준 1회 비용으로 해석
+- `cadence = bi_weekly`는 `billing_anchor_date` 또는 `start_date`를 기준으로 14일마다 반복
 - `cadence = monthly`는 시작일부터 종료일까지 월 단위 반영
-- `cadence = annual`은 시작일부터 연 단위 반영
+- `cadence = annual`은 `billing_anchor_date` 또는 `start_date` anniversary 기준으로 반영
+- `tax_mode = none`은 line-level no-tax를 의미한다
 - `cadence = custom`: v0.1에서는 **UI에서 선택 불가**, **occurrence 계산 규칙도 v0.1에서 확정하지 않음**(스키마 호환용으로만 둘 수 있음)
 
 ### 인덱스 추천
@@ -359,14 +367,16 @@ CREATE TABLE app_settings (
 
 ## 7.3 fee_items.cadence
 - `one_time`
+- `bi_weekly`
 - `monthly`
 - `annual`
 - `custom` — 반복 규칙 미리 정의 외의 자유 형태를 열어 두는 **스키마 확장용** 값. v0.1 제품·계산에서는 다루지 않는다.
 
-「사용자가 Other·label로 추가하는 비용 **라인**」은 별도 개념이며, 허용되는 cadence 값은 주로 `one_time` / `monthly` / `annual` 등으로 제한된다(Product Spec §8.4·§8.6).
+「사용자가 Other·label로 추가하는 비용 **라인**」은 별도 개념이며, 허용되는 cadence 값은 주로 `one_time` / `bi_weekly` / `monthly` / `annual` 등으로 제한된다(Product Spec §8.4·§8.6).
 
 ## 7.4 fee_items.tax_mode
 - `inherit_default`
+- `none`
 - `custom`
 
 ---
@@ -455,7 +465,11 @@ MVP에서는 같은 날 여러 completed visit를 허용한다.
 - `effective_gst_rate = app_settings.default_gst_rate`
 - `effective_pst_rate = app_settings.default_pst_rate`
 
-### Rule B. custom (`tax_mode`, cadence와 무관)
+### Rule B. none
+- `effective_gst_rate = 0`
+- `effective_pst_rate = 0`
+
+### Rule C. custom (`tax_mode`, cadence와 무관)
 - `effective_gst_rate = fee_item.gst_rate`
 - `effective_pst_rate = fee_item.pst_rate`
 
@@ -581,6 +595,27 @@ if item.cadence === 'one_time' and item.start_date in range:
 
 ---
 
+## 13.2.1 Bi-weekly 비용 계산
+예:
+- bi-weekly membership
+
+### 규칙
+- occurrence anchor는 `billing_anchor_date`가 있으면 그것을 사용하고, 없으면 `start_date`를 사용한다.
+- anchor 이후 14일 간격으로 occurrence를 생성한다.
+- 계산 대상 기간 안에 들어오는 occurrence만 포함한다.
+
+```ts
+anchorDate = item.billing_anchor_date ?? item.start_date
+biWeeklyOccurrences = countBiWeeklyOccurrences(item, range, anchorDate)
+biWeeklyTotal = biWeeklyOccurrences * total(item)
+```
+
+### 단순화 정책
+- provider별 복잡한 billing alignment는 다루지 않는다.
+- 날짜 anchor만 고정하고, proration은 하지 않는다.
+
+---
+
 ## 13.3 Monthly 비용 계산
 예:
 - monthly membership
@@ -622,7 +657,7 @@ monthlyTotal = monthlyOccurrences * total(item)
 
 ### 규칙
 - 계산 대상 기간 안에 annual occurrence가 몇 번 발생하는지 센다.
-- occurrence 기준일은 `start_date`의 월/일 anniversary 기반
+- occurrence 기준일은 `billing_anchor_date`가 있으면 그것의 월/일, 없으면 `start_date`의 월/일 anniversary 기반
 
 #### 예시
 - annual fee start_date = 2026-03-01
@@ -747,12 +782,15 @@ MVP에서는 **visit의 시작 시각 (`started_at`) 기준**으로 기간에 �
 fee는 cadence에 따라 occurrence를 펼쳐서 계산하므로, visit와 다르게 처리한다.
 
 ### 17.1 monthly
-- 해당 월에 active이면 그 달 1회 발생
+- anchor와 무관하게 해당 월에 active이면 그 달 1회 발생
 
-### 17.2 annual
+### 17.2 bi_weekly
+- `billing_anchor_date` 또는 `start_date`를 기준으로 14일마다 1회 발생
+
+### 17.3 annual
 - anniversary date가 range 안에 있으면 1회 발생
 
-### 17.3 one-time
+### 17.4 one-time
 - start_date가 range 안에 있으면 1회 발생
 
 ---
@@ -911,6 +949,8 @@ type DashboardStats = {
 - start_date 필수
 - end_date는 start_date 이후여야 함
 - custom tax mode일 때 gst/pst 값 필요
+- `tax_mode = none`일 때는 custom tax 값을 비운다
+- annual / bi-weekly에서는 `billing_anchor_date`가 있으면 valid date여야 함
 
 ## 22.3 Settings validation
 - currency 필수
@@ -927,17 +967,22 @@ type DashboardStats = {
 - 컬럼 추가와 기본값 부여를 선호
 - destructive change는 최대한 피함
 
-### 23.2 예상되는 미래 확장
+### 23.2 다음 local expansion에 잠근 변경
+- `fee_items.cadence`에 `bi_weekly` 추가
+- `fee_items.tax_mode`에 `none` 추가
+- `fee_items.billing_anchor_date` 추가
+
+### 23.3 예상되는 미래 확장
 - `visits.deleted_at` 추가
 - `fee_items.is_tax_included` 추가
 - `gyms.address` 추가
 - `app_settings.week_start_day` 추가
-- `fee_items.billing_anchor_day` 추가
 
-### 23.3 migration 테스트 포인트
+### 23.4 migration 테스트 포인트
 - 기존 visit 데이터 유지
 - 기존 fee calculation 유지
 - default tax 값 정상 반영
+- bi-weekly / no-tax / anchor-date 확장 경로 호환
 - active visit 복구 가능 여부
 
 ---
@@ -953,9 +998,11 @@ type DashboardStats = {
 
 ### 24.2 fee 계산
 - one-time occurrence
+- bi-weekly occurrence
 - monthly occurrence
 - annual occurrence
 - inactive 제외
+- no-tax line 처리
 - custom tax override 반영
 
 ### 24.3 KPI 계산
@@ -982,7 +1029,7 @@ type DashboardStats = {
 ### 뒤로 미룰 것
 - tax-inclusive support
 - proration
-- billing cycle alignment
+- provider-specific billing cycle alignment
 - raw location history analytics
 - complex forecast models
 - snapshot materialization
@@ -1041,7 +1088,7 @@ type DashboardStats = {
 - 비용은 row-based item 구조로 저장한다.
 - 세금은 app default + fee item override 구조를 따른다.
 - 총 비용은 cadence 기반 occurrence expansion 후 계산한다.
-- monthly는 월별 1회 발생, annual은 anniversary 발생, one-time은 start_date 기준 1회 발생으로 계산한다(`cadence = custom` 의 occurrence 규칙은 v0.1 비범위).
+- bi-weekly는 anchor 기준 14일마다, monthly는 월별 1회, annual은 anniversary 발생, one-time은 start_date 기준 1회 발생으로 계산한다(`cadence = custom` 의 occurrence 규칙은 v0.1 비범위).
 - Home 대표 KPI인 `costPerVisit`는 totalPaid / completedVisits로 정의한다.
 - `costPerHour`, `costPerActiveDay`, `averageVisitLength`는 보조 지표로 계산한다.
 - active visit는 홈 상태에는 보이지만 핵심 KPI 계산에는 포함하지 않는다.
