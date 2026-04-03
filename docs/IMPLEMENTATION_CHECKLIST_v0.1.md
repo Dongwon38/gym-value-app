@@ -160,6 +160,16 @@
 3. iOS background / geofence / notification parity QA
 4. release-ready device smoke QA
 
+v0.1 이후의 다음 local 제품 확장 계획은
+`POST_MVP_LOCAL_EXPANSION_PLAN_v0.1.md`
+에서 관리한다.
+
+우선순위는 아래로 잠근다.
+1. 비용 입력/계산 UX 확장
+2. 통화/세율 selector UX
+3. gym search assist
+4. onboarding 재설계
+
 ---
 
 ## 6. Task Checklist

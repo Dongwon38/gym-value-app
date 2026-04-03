@@ -484,7 +484,7 @@ MVP에서는 세금을 단순 고정값으로 하드코딩하지 않는다.
 4. **Data Model and Calculation** — 엔티티, SQLite·계산·세금 규칙
 5. **Delivery Plan** — 마일스톤, 우선순위, 체크리스트, QA·릴리즈
 
-#### Implementation companion docs (구현 보조)
+#### Implementation companion docs (구현·확장 보조)
 코어를 실행에 옮길 때 함께 두는 문서다. 코어를 대체하지 않는다.
 
 6. **Phase 0 / Phase 1 Implementation Kickoff** — 엔지니어링 관점 Phase 범위·파일 순서·체크리스트
@@ -492,7 +492,11 @@ MVP에서는 세금을 단순 고정값으로 하드코딩하지 않는다.
 8. **Implementation Checklist** — PR-sized task, live status, acceptance/verification 기준
 9. **Manual MVP QA Report** — manual-only MVP 기준 automated/workspace QA evidence
 10. **Assisted Check-In QA** — assisted flow wiring과 fallback polish QA evidence
-11. (향후) Repository / Use Case Scaffold 등 — 필요 시 추가
+11. **Future Development Playbook** — v0.1 이후 전체 roadmap과 운영 순서
+12. **Post-MVP Local Expansion Plan** — 다음 local UX 확장 블록의 세부 구현 순서
+13. **Online Expansion Architecture** — account/backup/sync/web 확장용 아키텍처 기준
+14. **Backup and Restore Spec** — 첫 online 기능으로서 backup/restore 범위와 계약
+15. (향후) Repository / Use Case Scaffold 등 — 필요 시 추가
 
 ### 15.2 문서 수 최소화 원칙
 - UX 관련 상세는 `Product Spec`에 묶는다
@@ -529,7 +533,7 @@ MVP에서는 세금을 단순 고정값으로 하드코딩하지 않는다.
 4. `DATA_MODEL_AND_CALCULATION_v0.1.md`
 5. `DELIVERY_PLAN_v0.1.md`
 
-구현 보조 문서(Phase 0/1 Kickoff, Initial DB Schema SQL, Implementation Checklist, QA reports 등)는 §15.1 **Implementation companion**을 본다.
+구현·확장 보조 문서(Phase 0/1 Kickoff, Initial DB Schema SQL, Implementation Checklist, QA reports, future/online docs 등)는 §15.1 **Implementation companion**을 본다.
 
 ---
 
