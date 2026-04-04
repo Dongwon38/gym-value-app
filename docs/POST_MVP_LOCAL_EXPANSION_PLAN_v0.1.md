@@ -109,10 +109,10 @@ settings/gym/cost setup이 바뀌기 전에 먼저 만들면 다시 뜯어고치
 
 핵심 사용 방식은 아래다.
 - 자주 쓰는 기본 비용 4종을 먼저 제시한다.
-- 없는 항목은 비워 두거나 끌 수 있다.
+- 없는 항목은 비워 둔다.
 - 필요하면 custom line을 추가한다.
-- 사용자는 항상 **세전 금액**을 입력한다.
-- 앱은 **세후 금액 preview**를 계산해 보여준다.
+- 사용자는 line별로 **세전 / 세후 / 비과세 / 커스텀 세율** 입력 모드를 고를 수 있다.
+- 앱은 입력 모드에 맞는 저장 pre-tax 값과 preview 금액을 계산해 보여준다.
 
 ### 5.2 제품 결정
 
@@ -148,10 +148,16 @@ settings/gym/cost setup이 바뀌기 전에 먼저 만들면 다시 뜯어고치
 - `none`: 해당 비용 라인에 세금 미적용
 - `custom`: 항목별 GST/PST override
 
-#### D6. 금액 입력은 항상 pre-tax다
-- `amount_pre_tax`만 입력한다.
-- 이 블록에서는 `is_tax_included`를 도입하지 않는다.
-- 이유: 입력 규칙을 단순하게 유지하고 계산 혼동을 줄이기 위해서다.
+#### D6. 저장 값은 계속 `amount_pre_tax`지만 UI 입력 모드는 확장한다
+- 저장 컬럼은 계속 `amount_pre_tax`를 유지한다.
+- UI에서는 아래 4개 입력 모드를 제공한다.
+  - `pre_tax`
+  - `post_tax`
+  - `tax_exempt`
+  - `custom`
+- `post_tax`는 입력된 최종 결제 금액을 default tax 기준으로 역산해 `amount_pre_tax`로 저장한다.
+- `tax_exempt`는 `tax_mode = none`으로 저장한다.
+- `custom`은 사용자가 입력한 GST/PST를 사용한다.
 
 #### D7. recurring anchor는 optional `billing_anchor_date`로 푼다
 - 타입: `YYYY-MM-DD`
@@ -185,7 +191,7 @@ settings/gym/cost setup이 바뀌기 전에 먼저 만들면 다시 뜯어고치
 
 #### UI
 - generic single-form에서 starter line 중심 편집 화면으로 교체
-- 각 line별 enabled/disabled, tax toggle, after-tax preview 추가
+- 각 line별 cadence, compact tax/input mode selector, preview, advanced fields 추가
 - “Add custom cost line” entry 추가
 
 ### 5.4 PR-sized 작업 단위
@@ -215,12 +221,12 @@ settings/gym/cost setup이 바뀌기 전에 먼저 만들면 다시 뜯어고치
 
 #### `LXP-COST-04` Costs 입력 UI 재작성
 - Goal: starter line + extra line 흐름을 실제 화면에 반영한다.
-- Scope: Costs screen, editor sections, pre-tax input, after-tax preview, optional advanced fields
+- Scope: Costs screen, compact row editor, pre/post/no-tax/custom input mode, preview, optional advanced fields
 - Acceptance: 기본 4종을 빠르게 입력할 수 있고, 필요한 경우만 추가 필드를 펼친다.
 - 구현 메모:
   - Costs 화면 상단에 `Membership / Signup fee / Annual fee / Locker fee` starter line이 항상 보이도록 구성했다.
-  - 각 line은 `Use / Skip`, cadence, tax handling, pre-tax amount, after-tax preview를 가진다.
-  - 금액이 비어 있거나 `Skip`인 starter line은 저장 시 row를 만들지 않는다.
+  - 각 line은 compact row 구조로 amount, cadence, tax/input mode를 바로 수정할 수 있다.
+  - 금액이 비어 있는 starter line은 저장 시 row를 만들지 않는다.
   - 기존 active row는 starter/custom draft로 hydrate되고, inactive row는 하단 history에 유지한다.
 
 #### `LXP-COST-05` edit/inactive/history polish와 QA
@@ -235,8 +241,8 @@ settings/gym/cost setup이 바뀌기 전에 먼저 만들면 다시 뜯어고치
 ### 5.5 완료 기준
 - 사용자는 기본 비용 4종을 화면에서 바로 인지하고 빠르게 입력할 수 있다.
 - `one_time / bi_weekly / monthly / annual`이 실제 저장/계산된다.
-- 세금은 line별로 `기본값 사용 / 세금 없음 / 커스텀`을 고를 수 있다.
-- 입력은 항상 세전이고, 세후 결과가 UI에서 계산되어 보인다.
+- 세금/입력 모드는 line별로 `세전 / 세후 / 비과세 / 커스텀`을 고를 수 있다.
+- 저장은 계속 pre-tax 기준이지만, UI preview는 입력 모드에 맞춰 계산되어 보인다.
 - annual fee는 optional billing date를 가질 수 있다.
 
 ### 5.6 검증 기준

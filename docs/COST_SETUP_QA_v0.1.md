@@ -43,7 +43,7 @@
 
 ### 3.1 Starter lines
 - Costs 화면 진입 시 `Membership`, `Signup fee`, `Annual fee`, `Locker fee` starter line이 항상 렌더링된다.
-- 각 line은 `Use / Skip`, cadence, tax handling, pre-tax amount 입력을 가진다.
+- 각 line은 compact row 구조에서 cadence, `pre-tax / post-tax / no-tax / custom` 입력 모드, amount 입력을 가진다.
 - 금액이 비어 있는 starter line은 그대로 둘 수 있고, save 시 row를 만들지 않는다.
 
 ### 3.2 Saved row hydrate

@@ -20,7 +20,7 @@ export function Card({ children, style, subtitle, title }: CardProps) {
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
           borderRadius: theme.radius.md,
-          padding: theme.spacing.xl,
+          padding: theme.spacing.lg,
         },
         style,
       ]}>
@@ -38,7 +38,7 @@ export function Card({ children, style, subtitle, title }: CardProps) {
           {subtitle}
         </Text>
       ) : null}
-      <View style={title || subtitle ? { marginTop: theme.spacing.lg } : undefined}>
+      <View style={title || subtitle ? { marginTop: theme.spacing.md } : undefined}>
         {children}
       </View>
     </View>
@@ -50,12 +50,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   title: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: '700',
-    lineHeight: 24,
+    lineHeight: 22,
   } satisfies TextStyle,
   subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 18,
   } satisfies TextStyle,
 });

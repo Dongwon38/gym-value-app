@@ -1,5 +1,6 @@
 import { emptyFeeItemFormValues, type FeeItemFormValues } from '../../../domain/forms';
 import type { FeeItem } from '../../../domain/models';
+import { deriveAmountInputModeFromTaxMode } from './costEntryMode';
 
 function getLocalTodayDate() {
   const today = new Date();
@@ -20,6 +21,7 @@ export function createNewCostItemFormValues(): FeeItemFormValues {
 export function mapFeeItemToFormValues(feeItem: FeeItem): FeeItemFormValues {
   return {
     amountPreTax: String(feeItem.amountPreTax),
+    amountInputMode: deriveAmountInputModeFromTaxMode(feeItem.taxMode),
     billingAnchorDate: feeItem.billingAnchorDate ?? '',
     cadence: feeItem.cadence === 'custom' ? '' : feeItem.cadence,
     category: feeItem.category,

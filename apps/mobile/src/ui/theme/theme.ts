@@ -20,13 +20,13 @@ export const appTheme = {
     sm: 8,
     md: 12,
     lg: 16,
-    xl: 24,
-    xxl: 32,
+    xl: 20,
+    xxl: 28,
   },
   radius: {
-    sm: 12,
-    md: 18,
-    lg: 24,
+    sm: 10,
+    md: 14,
+    lg: 20,
     pill: 999,
   },
   typography: {
@@ -38,24 +38,24 @@ export const appTheme = {
       textTransform: 'uppercase',
     } satisfies TextStyle,
     title: {
-      fontSize: 31,
+      fontSize: 26,
       fontWeight: '700',
-      lineHeight: 38,
+      lineHeight: 32,
     } satisfies TextStyle,
     body: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '400',
-      lineHeight: 24,
-    } satisfies TextStyle,
-    button: {
-      fontSize: 16,
-      fontWeight: '600',
       lineHeight: 20,
     } satisfies TextStyle,
+    button: {
+      fontSize: 15,
+      fontWeight: '600',
+      lineHeight: 18,
+    } satisfies TextStyle,
     cardTitle: {
-      fontSize: 19,
+      fontSize: 17,
       fontWeight: '700',
-      lineHeight: 24,
+      lineHeight: 22,
     } satisfies TextStyle,
   },
 } as const;

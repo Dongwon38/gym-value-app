@@ -236,7 +236,7 @@ CREATE TABLE fee_items (
 ### 필드 설명
 - `category`: `monthly_membership | annual_fee | signup_fee | locker_fee | pt | other`
 - `label`: 화면 노출용 이름
-- `amount_pre_tax`: 세전 금액
+- `amount_pre_tax`: 저장 기준 pre-tax 금액
 - `cadence`: `one_time | bi_weekly | monthly | annual | custom` — 여기서 마지막 `custom`은 **반복 규칙(cadence)의 enum 값**이며, Product Spec의 “사용자 정의 비용 라인”과 동일어가 아니다(본 문서 §13.5).
 - `start_date`: 비용 유효 시작일
 - `end_date`: 종료일. ongoing이면 null 가능
@@ -454,7 +454,7 @@ MVP에서는 같은 날 여러 completed visit를 허용한다.
 ## 10. 세금 모델
 
 ## 10.1 세금 계산의 기본 원칙
-- 비용 계산은 `세전 금액 + 적용 세금` 기준으로 최종 총비용을 만든다.
+- 비용 계산은 저장된 `amount_pre_tax + 적용 세금` 기준으로 최종 총비용을 만든다.
 - 세금은 fee item 단위로 적용된다.
 - 앱 전역 기본 세율이 있고, 항목별 override가 가능하다.
 
@@ -491,7 +491,9 @@ total = preTax + taxAmount
 - 표시: `$56.24`
 
 ### 10.5 tax-inclusive 입력은 MVP에서 제외
-MVP에서는 사용자가 입력하는 금액을 **세전 기준**으로 통일한다.
+저장 값은 계속 **세전 기준**으로 유지한다.
+다만 post-MVP compact cost setup UI에서는 사용자가 `세전 / 세후 / 비과세 / 커스텀` 입력 모드를 고를 수 있고,
+`세후` 입력은 default tax 기준으로 역산해서 `amount_pre_tax`에 저장한다.
 
 #### 이유
 - tax-inclusive / tax-exclusive 혼합은 UX와 계산을 복잡하게 만든다.

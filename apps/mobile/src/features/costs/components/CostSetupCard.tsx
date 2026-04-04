@@ -1,20 +1,16 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { FeeItemFormValues } from '../../../domain/forms';
 import type {
-  AppSettings,
-  FeeItemCategory,
-  FeeItemTaxMode,
-} from '../../../domain/models';
-import {
-  feeItemCategories,
-  feeItemCadences,
-} from '../../../domain/models';
+  FeeItemAmountInputMode,
+  FeeItemFormValues,
+} from '../../../domain/forms';
+import type { AppSettings, FeeItemCategory } from '../../../domain/models';
+import { feeItemCadences, feeItemCategories } from '../../../domain/models';
 import type { ValidationIssue } from '../../../utils/validation';
 import { Card, PrimaryButton, TextField } from '../../../ui/components';
 import { useAppTheme } from '../../../ui/theme';
-import { formatCostItemCadence, formatCostItemCategory } from '../useCases/costItems';
+import { formatCostItemCategory } from '../useCases/costItems';
 import {
   formatCostSetupMoney,
   getCostSetupLinePreview,
@@ -33,7 +29,6 @@ type CostSetupCardProps = {
   onAddCustomLine: () => void;
   onRemoveCustomLine: (lineId: string) => void;
   onSave: () => void;
-  onSetLineEnabled: (lineId: string, enabled: boolean) => void;
   onSetLineFieldValue: <Field extends keyof FeeItemFormValues>(
     lineId: string,
     field: Field,
@@ -49,138 +44,33 @@ type CostSetupCardProps = {
   validationErrorsByLine: Record<string, ValidationIssue[]>;
 };
 
-type ChoiceOption<Value extends string | boolean> = {
-  description: string;
+type CompactOption<Value extends string> = {
   label: string;
   value: Value;
 };
 
-const availabilityOptions: ChoiceOption<boolean>[] = [
-  {
-    description: 'Save this line when an amount is present.',
-    label: 'Use',
-    value: true,
-  },
-  {
-    description: 'Skip this line or mark an existing row inactive.',
-    label: 'Skip',
-    value: false,
-  },
-];
-
-const taxModeOptions: ChoiceOption<FeeItemTaxMode>[] = [
-  {
-    description: 'Use the default GST/PST values from Settings.',
-    label: 'Default tax',
-    value: 'inherit_default',
-  },
-  {
-    description: 'Apply no tax to this line.',
-    label: 'No tax',
-    value: 'none',
-  },
-  {
-    description: 'Override GST/PST only for this line.',
-    label: 'Custom tax',
-    value: 'custom',
-  },
-];
-
-const cadenceOptions: ChoiceOption<
+const cadenceOptions: CompactOption<
   Exclude<(typeof feeItemCadences)[number], 'custom'>
->[] = feeItemCadences
-  .filter(cadence => cadence !== 'custom')
-  .map(cadence => ({
-    description:
-      cadence === 'one_time'
-        ? 'Save a single charge inside its date range.'
-        : cadence === 'bi_weekly'
-          ? 'Repeat every 14 days from the billing date anchor.'
-          : cadence === 'monthly'
-            ? 'Charge once per active month.'
-            : 'Charge once per annual cycle.',
-    label: formatCostItemCadence(cadence),
-    value: cadence,
-  }));
+>[] = [
+  { label: 'Once', value: 'one_time' },
+  { label: '2wk', value: 'bi_weekly' },
+  { label: 'Month', value: 'monthly' },
+  { label: 'Year', value: 'annual' },
+];
 
-const customCategoryOptions: ChoiceOption<FeeItemCategory>[] = feeItemCategories.map(
+const amountModeOptions: CompactOption<FeeItemAmountInputMode>[] = [
+  { label: 'Pre-tax', value: 'pre_tax' },
+  { label: 'Post-tax', value: 'post_tax' },
+  { label: 'No tax', value: 'tax_exempt' },
+  { label: 'Custom', value: 'custom' },
+];
+
+const customCategoryOptions: CompactOption<FeeItemCategory>[] = feeItemCategories.map(
   category => ({
-    description:
-      category === 'other'
-        ? 'Use a custom label for anything outside the starter presets.'
-        : 'Store this custom line under the matching cost category.',
     label: formatCostItemCategory(category),
     value: category,
   }),
 );
-
-function ChoicePillGroup<Value extends string | boolean>({
-  label,
-  onChange,
-  options,
-  selectedValue,
-}: {
-  label: string;
-  onChange: (value: Value) => void;
-  options: ChoiceOption<Value>[];
-  selectedValue: Value;
-}) {
-  const theme = useAppTheme();
-
-  return (
-    <View style={styles.field}>
-      <Text style={[styles.fieldLabel, { color: theme.colors.textPrimary }]}>
-        {label}
-      </Text>
-      <View style={styles.choices}>
-        {options.map(option => {
-          const isSelected = option.value === selectedValue;
-
-          return (
-            <Pressable
-              key={String(option.value)}
-              accessibilityRole="button"
-              onPress={() => {
-                onChange(option.value);
-              }}
-              style={({ pressed }) => [
-                styles.choice,
-                {
-                  backgroundColor: isSelected
-                    ? theme.colors.surfaceMuted
-                    : theme.colors.surface,
-                  borderColor: isSelected
-                    ? theme.colors.accent
-                    : theme.colors.border,
-                  borderRadius: theme.radius.sm,
-                  opacity: pressed ? 0.8 : 1,
-                },
-              ]}>
-              <Text
-                style={[
-                  styles.choiceLabel,
-                  {
-                    color: isSelected
-                      ? theme.colors.accent
-                      : theme.colors.textPrimary,
-                  },
-                ]}>
-                {option.label}
-              </Text>
-              <Text
-                style={[
-                  styles.choiceDescription,
-                  { color: theme.colors.textMuted },
-                ]}>
-                {option.description}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
 
 function getFieldError(
   errors: ValidationIssue[] | undefined,
@@ -189,11 +79,64 @@ function getFieldError(
   return errors?.find(issue => issue.field === field)?.message;
 }
 
-function CostSetupLineSection({
+function CompactSegmentedControl<Value extends string>({
+  onChange,
+  options,
+  selectedValue,
+}: {
+  onChange: (value: Value) => void;
+  options: CompactOption<Value>[];
+  selectedValue: Value;
+}) {
+  const theme = useAppTheme();
+
+  return (
+    <View style={styles.segmentedControl}>
+      {options.map(option => {
+        const isSelected = option.value === selectedValue;
+
+        return (
+          <Pressable
+            key={option.value}
+            accessibilityRole="button"
+            onPress={() => {
+              onChange(option.value);
+            }}
+            style={({ pressed }) => [
+              styles.segment,
+              {
+                backgroundColor: isSelected
+                  ? theme.colors.accent
+                  : theme.colors.surface,
+                borderColor: isSelected
+                  ? theme.colors.accent
+                  : theme.colors.border,
+                borderRadius: theme.radius.sm,
+                opacity: pressed ? 0.75 : 1,
+              },
+            ]}>
+            <Text
+              style={[
+                styles.segmentLabel,
+                {
+                  color: isSelected
+                    ? theme.colors.accentContrast
+                    : theme.colors.textSecondary,
+                },
+              ]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const CostSetupLineRow = memo(function CostSetupLineRow({
   appSettings,
   line,
   onRemoveCustomLine,
-  onSetLineEnabled,
   onSetLineFieldValue,
   onToggleLineAdvanced,
   validationErrors,
@@ -204,7 +147,6 @@ function CostSetupLineSection({
   > | null;
   line: CostSetupLineDraft;
   onRemoveCustomLine: (lineId: string) => void;
-  onSetLineEnabled: (lineId: string, enabled: boolean) => void;
   onSetLineFieldValue: <Field extends keyof FeeItemFormValues>(
     lineId: string,
     field: Field,
@@ -216,134 +158,150 @@ function CostSetupLineSection({
   const theme = useAppTheme();
   const preset = line.presetKey ? getStarterCostPreset(line.presetKey) : null;
   const preview = getCostSetupLinePreview(line, appSettings);
+  const amountFieldLabel =
+    line.formValues.amountInputMode === 'post_tax' ? 'Amount (after tax)' : 'Amount';
+  const amountPreviewLabel =
+    line.formValues.amountInputMode === 'post_tax'
+      ? preview
+        ? `Pre ${formatCostSetupMoney(preview.preTaxAmount, appSettings)}`
+        : 'Pre -'
+      : preview
+        ? `Post ${formatCostSetupMoney(preview.totalAmount, appSettings)}`
+        : 'Post -';
   const title =
     line.kind === 'starter'
-      ? preset?.title ?? 'Starter cost line'
-      : line.formValues.label.trim() || 'Custom cost line';
+      ? preset?.title ?? 'Cost line'
+      : line.formValues.label.trim() || 'Custom line';
+  const amountIsBlank = line.formValues.amountPreTax.trim().length === 0;
 
   return (
     <View
       style={[
-        styles.lineCard,
-        !line.enabled ? styles.lineCardMuted : null,
+        styles.rowCard,
         {
           backgroundColor: theme.colors.background,
           borderColor: theme.colors.border,
-          borderRadius: theme.radius.md,
-          marginTop: theme.spacing.lg,
-          padding: theme.spacing.lg,
+          borderRadius: theme.radius.sm,
         },
       ]}>
-      <View style={styles.lineHeader}>
-        <View style={styles.lineHeaderContent}>
-          <Text style={[styles.lineTitle, { color: theme.colors.textPrimary }]}>
+      <View style={styles.rowHeader}>
+        <View style={styles.rowHeaderMain}>
+          <Text style={[styles.rowTitle, { color: theme.colors.textPrimary }]}>
             {title}
           </Text>
-          <Text
-            style={[styles.lineDescription, { color: theme.colors.textSecondary }]}>
-            {preset?.description ??
-              'Use additional lines for PT, parking, towel service, or any other recurring charge.'}
-          </Text>
+          {line.existingFeeItemId ? (
+            <Text style={[styles.rowMeta, { color: theme.colors.accent }]}>
+              Saved
+            </Text>
+          ) : null}
         </View>
-        {line.existingFeeItemId ? (
-          <Text style={[styles.persistedBadge, { color: theme.colors.accent }]}>
-            {line.enabled ? 'Saved row' : 'Saved row (inactive on next save)'}
+        <View style={styles.rowHeaderActions}>
+          <Text style={[styles.amountPreview, { color: theme.colors.textSecondary }]}>
+            {amountPreviewLabel}
           </Text>
-        ) : null}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              onToggleLineAdvanced(line.draftId);
+            }}
+            style={({ pressed }) => [
+              styles.smallAction,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}>
+            <Text style={[styles.smallActionLabel, { color: theme.colors.accent }]}>
+              {line.showAdvanced ? 'Less' : 'More'}
+            </Text>
+          </Pressable>
+        </View>
       </View>
-
-      <ChoicePillGroup
-        label="Availability"
-        onChange={value => {
-          onSetLineEnabled(line.draftId, value);
-        }}
-        options={availabilityOptions}
-        selectedValue={line.enabled}
-      />
 
       {line.kind === 'custom' ? (
         <TextField
+          dense
           errorMessage={getFieldError(validationErrors, 'label')}
-          helperText="Required when this custom line has an amount."
-          label="Custom label"
+          label="Label"
           onChangeText={value => {
             onSetLineFieldValue(line.draftId, 'label', value);
           }}
-          placeholder="Parking, towel service, PT package"
+          placeholder="Parking"
           value={line.formValues.label}
         />
       ) : null}
 
-      <TextField
-        errorMessage={getFieldError(validationErrors, 'amountPreTax')}
-        helperText="Pre-tax amount only. Leave it blank to skip this line."
-        keyboardType="decimal-pad"
-        label="Amount (pre-tax)"
-        onChangeText={value => {
-          onSetLineFieldValue(line.draftId, 'amountPreTax', value);
-        }}
-        placeholder="59.99"
-        value={line.formValues.amountPreTax}
-      />
+      <View style={styles.compactGrid}>
+        <View style={styles.compactPrimaryField}>
+          <TextField
+            dense
+            errorMessage={getFieldError(validationErrors, 'amountPreTax')}
+            keyboardType="decimal-pad"
+            label={amountFieldLabel}
+            onChangeText={value => {
+              onSetLineFieldValue(line.draftId, 'amountPreTax', value);
+            }}
+            placeholder="59.99"
+            value={line.formValues.amountPreTax}
+          />
+        </View>
+        <View
+          style={[
+            styles.summaryBox,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+              borderRadius: theme.radius.sm,
+            },
+          ]}>
+          <Text style={[styles.summaryLabel, { color: theme.colors.textMuted }]}>
+            {line.formValues.amountInputMode === 'post_tax' ? 'Stored pre-tax' : 'After tax'}
+          </Text>
+          <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>
+            {preview
+              ? formatCostSetupMoney(
+                  line.formValues.amountInputMode === 'post_tax'
+                    ? preview.preTaxAmount
+                    : preview.totalAmount,
+                  appSettings,
+                )
+              : '-'}
+          </Text>
+        </View>
+      </View>
 
-      <ChoicePillGroup
-        label="Cadence"
-        onChange={value => {
-          onSetLineFieldValue(line.draftId, 'cadence', value);
-        }}
-        options={cadenceOptions}
-        selectedValue={(line.formValues.cadence || preset?.defaultCadence || 'monthly') as Exclude<
-          (typeof feeItemCadences)[number],
-          'custom'
-        >}
-      />
-
-      <ChoicePillGroup
-        label="Tax handling"
-        onChange={value => {
-          onSetLineFieldValue(line.draftId, 'taxMode', value);
-        }}
-        options={taxModeOptions}
-        selectedValue={line.formValues.taxMode}
-      />
-
-      <Text style={[styles.previewText, { color: theme.colors.textSecondary }]}>
-        {!line.enabled
-          ? 'This line will be skipped when you save.'
-          : preview
-            ? `${formatCostSetupMoney(
-                preview.totalAmount,
-                appSettings,
-              )} after tax (${formatCostSetupMoney(
-                preview.preTaxAmount,
-                appSettings,
-              )} + ${formatCostSetupMoney(
-                preview.totalTaxAmount,
-                appSettings,
-              )} tax).`
-            : 'Enter a pre-tax amount to preview the after-tax total.'}
-      </Text>
-
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => {
-          onToggleLineAdvanced(line.draftId);
-        }}
-        style={({ pressed }) => [
-          styles.advancedToggle,
-          { opacity: pressed ? 0.7 : 1 },
-        ]}>
-        <Text style={[styles.advancedToggleLabel, { color: theme.colors.accent }]}>
-          {line.showAdvanced ? 'Hide advanced fields' : 'Show advanced fields'}
+      <View style={styles.compactField}>
+        <Text style={[styles.compactLabel, { color: theme.colors.textMuted }]}>
+          Every
         </Text>
-      </Pressable>
+        <CompactSegmentedControl
+          onChange={value => {
+            onSetLineFieldValue(line.draftId, 'cadence', value);
+          }}
+          options={cadenceOptions}
+          selectedValue={(line.formValues.cadence || preset?.defaultCadence || 'monthly') as Exclude<
+            (typeof feeItemCadences)[number],
+            'custom'
+          >}
+        />
+      </View>
+
+      <View style={styles.compactField}>
+        <Text style={[styles.compactLabel, { color: theme.colors.textMuted }]}>
+          Tax
+        </Text>
+        <CompactSegmentedControl
+          onChange={value => {
+            onSetLineFieldValue(line.draftId, 'amountInputMode', value);
+          }}
+          options={amountModeOptions}
+          selectedValue={line.formValues.amountInputMode}
+        />
+      </View>
 
       {line.showAdvanced ? (
-        <View style={[styles.advancedFields, { marginTop: theme.spacing.md }]}>
+        <View style={styles.advancedStack}>
           {line.kind === 'starter' ? (
             <TextField
-              helperText="Optional label override for the saved row."
-              label="Saved label"
+              dense
+              label="Label"
               onChangeText={value => {
                 onSetLineFieldValue(line.draftId, 'label', value);
               }}
@@ -351,22 +309,26 @@ function CostSetupLineSection({
               value={line.formValues.label}
             />
           ) : (
-            <ChoicePillGroup
-              label="Category"
-              onChange={value => {
-                onSetLineFieldValue(line.draftId, 'category', value);
-              }}
-              options={customCategoryOptions}
-              selectedValue={line.formValues.category || 'other'}
-            />
+            <View style={styles.compactField}>
+              <Text style={[styles.compactLabel, { color: theme.colors.textMuted }]}>
+                Category
+              </Text>
+              <CompactSegmentedControl
+                onChange={value => {
+                  onSetLineFieldValue(line.draftId, 'category', value);
+                }}
+                options={customCategoryOptions}
+                selectedValue={line.formValues.category || 'other'}
+              />
+            </View>
           )}
 
-          <View style={styles.inlineFields}>
-            <View style={styles.inlineField}>
+          <View style={styles.dateGrid}>
+            <View style={styles.dateField}>
               <TextField
+                dense
                 errorMessage={getFieldError(validationErrors, 'startDate')}
-                helperText="YYYY-MM-DD"
-                label="Start date"
+                label="Start"
                 onChangeText={value => {
                   onSetLineFieldValue(line.draftId, 'startDate', value);
                 }}
@@ -374,15 +336,15 @@ function CostSetupLineSection({
                 value={line.formValues.startDate}
               />
             </View>
-            <View style={styles.inlineField}>
+            <View style={styles.dateField}>
               <TextField
+                dense
                 errorMessage={getFieldError(validationErrors, 'endDate')}
-                helperText="Optional"
-                label="End date"
+                label="End"
                 onChangeText={value => {
                   onSetLineFieldValue(line.draftId, 'endDate', value);
                 }}
-                placeholder="2026-12-31"
+                placeholder="Optional"
                 value={line.formValues.endDate}
               />
             </View>
@@ -390,9 +352,9 @@ function CostSetupLineSection({
 
           {shouldShowBillingAnchorDate(line.formValues.cadence) ? (
             <TextField
+              dense
               errorMessage={getFieldError(validationErrors, 'billingAnchorDate')}
-              helperText="Optional billing anchor for annual or bi-weekly charges."
-              label="Billing date anchor"
+              label="Billing anchor"
               onChangeText={value => {
                 onSetLineFieldValue(line.draftId, 'billingAnchorDate', value);
               }}
@@ -401,14 +363,14 @@ function CostSetupLineSection({
             />
           ) : null}
 
-          {line.formValues.taxMode === 'custom' ? (
-            <View style={styles.inlineFields}>
-              <View style={styles.inlineField}>
+          {line.formValues.amountInputMode === 'custom' ? (
+            <View style={styles.dateGrid}>
+              <View style={styles.dateField}>
                 <TextField
+                  dense
                   errorMessage={getFieldError(validationErrors, 'taxMode')}
-                  helperText="Decimal rate, for example 0.05"
                   keyboardType="decimal-pad"
-                  label="GST rate"
+                  label="GST"
                   onChangeText={value => {
                     onSetLineFieldValue(line.draftId, 'gstRate', value);
                   }}
@@ -416,12 +378,12 @@ function CostSetupLineSection({
                   value={line.formValues.gstRate}
                 />
               </View>
-              <View style={styles.inlineField}>
+              <View style={styles.dateField}>
                 <TextField
+                  dense
                   errorMessage={getFieldError(validationErrors, 'taxMode')}
-                  helperText="Decimal rate, for example 0.07"
                   keyboardType="decimal-pad"
-                  label="PST rate"
+                  label="PST"
                   onChangeText={value => {
                     onSetLineFieldValue(line.draftId, 'pstRate', value);
                   }}
@@ -434,6 +396,12 @@ function CostSetupLineSection({
         </View>
       ) : null}
 
+      {line.existingFeeItemId && amountIsBlank ? (
+        <Text style={[styles.inlineHint, { color: theme.colors.warning }]}>
+          Blank amount will deactivate this saved row on save.
+        </Text>
+      ) : null}
+
       {line.kind === 'custom' && !line.existingFeeItemId ? (
         <Pressable
           accessibilityRole="button"
@@ -441,17 +409,17 @@ function CostSetupLineSection({
             onRemoveCustomLine(line.draftId);
           }}
           style={({ pressed }) => [
-            styles.removeLineButton,
+            styles.smallAction,
             { opacity: pressed ? 0.7 : 1 },
           ]}>
-          <Text style={[styles.removeLineLabel, { color: theme.colors.danger }]}>
-            Remove custom line
+          <Text style={[styles.smallActionLabel, { color: theme.colors.danger }]}>
+            Remove
           </Text>
         </Pressable>
       ) : null}
     </View>
   );
-}
+});
 
 export function CostSetupCard({
   appSettings,
@@ -460,7 +428,6 @@ export function CostSetupCard({
   onAddCustomLine,
   onRemoveCustomLine,
   onSave,
-  onSetLineEnabled,
   onSetLineFieldValue,
   onToggleLineAdvanced,
   primaryGymName,
@@ -474,20 +441,19 @@ export function CostSetupCard({
   const theme = useAppTheme();
 
   return (
-    <Card
-      subtitle="The four most common gym charges stay visible by default. Leave any starter line blank or switch it to Skip, then add custom rows only when you need them."
-      title="Starter cost setup">
-      <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-        {hasPrimaryGym
-          ? `Saving active cost rows to primary gym: ${primaryGymName ?? 'Unnamed gym'}.`
-          : 'A primary gym is required before costs can be saved.'}
-      </Text>
-
-      {supportState === 'loading' ? (
-        <Text style={[styles.statusText, { color: theme.colors.textSecondary }]}>
-          Preparing gym and tax defaults for the cost setup screen.
+    <Card title="Costs">
+      <View style={styles.toolbar}>
+        <Text style={[styles.toolbarText, { color: theme.colors.textSecondary }]}>
+          {hasPrimaryGym
+            ? primaryGymName ?? 'Primary gym'
+            : 'Set a primary gym first'}
         </Text>
-      ) : null}
+        <PrimaryButton
+          disabled={supportState !== 'ready' || !hasPrimaryGym || saveState === 'saving'}
+          label={saveState === 'saving' ? 'Saving...' : 'Save'}
+          onPress={onSave}
+        />
+      </View>
 
       {supportState === 'error' ? (
         <Text style={[styles.statusText, { color: theme.colors.danger }]}>
@@ -512,159 +478,191 @@ export function CostSetupCard({
         </Text>
       ) : null}
 
-      {starterLines.map(line => (
-        <CostSetupLineSection
-          key={line.draftId}
-          appSettings={appSettings}
-          line={line}
-          onRemoveCustomLine={onRemoveCustomLine}
-          onSetLineEnabled={onSetLineEnabled}
-          onSetLineFieldValue={onSetLineFieldValue}
-          onToggleLineAdvanced={onToggleLineAdvanced}
-          validationErrors={validationErrorsByLine[line.draftId]}
-        />
-      ))}
-
-      <View style={{ marginTop: theme.spacing.xl }}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-          Additional cost lines
-        </Text>
-        <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-          Add parking, towel service, PT, family add-ons, or any other cost beyond the starter four.
-        </Text>
-        {customLines.map(line => (
-          <CostSetupLineSection
+      <View style={styles.rowStack}>
+        {starterLines.map(line => (
+          <CostSetupLineRow
             key={line.draftId}
             appSettings={appSettings}
             line={line}
             onRemoveCustomLine={onRemoveCustomLine}
-            onSetLineEnabled={onSetLineEnabled}
             onSetLineFieldValue={onSetLineFieldValue}
             onToggleLineAdvanced={onToggleLineAdvanced}
             validationErrors={validationErrorsByLine[line.draftId]}
           />
         ))}
-        <PrimaryButton
-          label="Add Custom Cost Line"
-          onPress={onAddCustomLine}
-          style={{ marginTop: theme.spacing.lg }}
-        />
+
+        {customLines.map(line => (
+          <CostSetupLineRow
+            key={line.draftId}
+            appSettings={appSettings}
+            line={line}
+            onRemoveCustomLine={onRemoveCustomLine}
+            onSetLineFieldValue={onSetLineFieldValue}
+            onToggleLineAdvanced={onToggleLineAdvanced}
+            validationErrors={validationErrorsByLine[line.draftId]}
+          />
+        ))}
       </View>
 
-      <PrimaryButton
-        disabled={supportState !== 'ready' || !hasPrimaryGym || saveState === 'saving'}
-        label={saveState === 'saving' ? 'Saving Cost Setup...' : 'Save Cost Setup'}
-        onPress={onSave}
-        style={{ marginTop: theme.spacing.xl }}
-      />
+      <Pressable
+        accessibilityRole="button"
+        onPress={onAddCustomLine}
+        style={({ pressed }) => [
+          styles.addLineAction,
+          {
+            backgroundColor: theme.colors.surfaceMuted,
+            borderColor: theme.colors.border,
+            borderRadius: theme.radius.sm,
+            marginTop: theme.spacing.lg,
+            opacity: pressed ? 0.75 : 1,
+          },
+        ]}>
+        <Text style={[styles.addLineLabel, { color: theme.colors.textPrimary }]}>
+          Add custom line
+        </Text>
+      </Pressable>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  advancedFields: {
-    gap: 16,
+  addLineAction: {
+    alignItems: 'center',
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 12,
   },
-  advancedToggle: {
-    alignSelf: 'flex-start',
-    marginTop: 12,
-  },
-  advancedToggleLabel: {
+  addLineLabel: {
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 18,
   },
-  choice: {
-    borderWidth: 1,
-    gap: 4,
-    minWidth: 120,
-    padding: 12,
+  advancedStack: {
+    gap: 12,
+    marginTop: 12,
   },
-  choiceDescription: {
+  amountPreview: {
     fontSize: 12,
     lineHeight: 16,
   },
-  choiceLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 18,
+  compactField: {
+    gap: 6,
   },
-  choices: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  field: {
-    gap: 8,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  inlineField: {
-    flex: 1,
-  },
-  inlineFields: {
+  compactGrid: {
+    alignItems: 'stretch',
     flexDirection: 'row',
     gap: 12,
   },
-  lineCard: {
+  compactLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  compactPrimaryField: {
+    flex: 1,
+  },
+  dateField: {
+    flex: 1,
+  },
+  dateGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  inlineHint: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  rowCard: {
     borderWidth: 1,
-    gap: 16,
+    gap: 10,
+    padding: 12,
   },
-  lineCardMuted: {
-    opacity: 0.8,
-  },
-  lineDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  lineHeader: {
+  rowHeader: {
     alignItems: 'flex-start',
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'space-between',
   },
-  lineHeaderContent: {
+  rowHeaderActions: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  rowHeaderMain: {
     flex: 1,
+    gap: 2,
   },
-  lineTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    lineHeight: 22,
-  },
-  meta: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  persistedBadge: {
+  rowMeta: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     lineHeight: 16,
   },
-  previewText: {
-    fontSize: 13,
-    lineHeight: 18,
+  rowStack: {
+    gap: 12,
+    marginTop: 12,
   },
-  removeLineButton: {
-    alignSelf: 'flex-start',
-  },
-  removeLineLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  sectionTitle: {
+  rowTitle: {
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: 4,
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  segment: {
+    borderWidth: 1,
+    minHeight: 34,
+    minWidth: 64,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  segmentLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  smallAction: {
+    alignSelf: 'flex-start',
+  },
+  smallActionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 16,
   },
   statusText: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 8,
+  },
+  summaryBox: {
+    borderWidth: 1,
+    justifyContent: 'center',
+    minWidth: 108,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  summaryLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  summaryValue: {
     fontSize: 14,
-    lineHeight: 20,
-    marginTop: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  toolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  toolbarText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

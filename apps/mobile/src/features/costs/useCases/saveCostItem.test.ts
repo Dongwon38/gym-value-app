@@ -54,6 +54,7 @@ describe('saveCostItem', () => {
       {
         ...emptyFeeItemFormValues,
         amountPreTax: '25',
+        amountInputMode: 'custom',
         cadence: 'monthly',
         category: 'locker_fee',
         gstRate: '0.05',
@@ -96,6 +97,7 @@ describe('saveCostItem', () => {
       {
         ...emptyFeeItemFormValues,
         amountPreTax: '44.99',
+        amountInputMode: 'tax_exempt',
         billingAnchorDate: '2025-12-31',
         cadence: 'bi_weekly',
         category: 'monthly_membership',
@@ -120,6 +122,42 @@ describe('saveCostItem', () => {
       sortOrder: undefined,
       startDate: '2026-01-01',
       taxMode: 'none',
+    });
+  });
+
+  it('converts a post-tax amount back into stored pre-tax using default rates', async () => {
+    (createFeeItem as jest.Mock).mockResolvedValue({
+      id: 'fee_3',
+      label: 'Membership fee',
+    });
+
+    await saveCostItem(
+      {
+        ...emptyFeeItemFormValues,
+        amountInputMode: 'post_tax',
+        amountPreTax: '112',
+        cadence: 'monthly',
+        category: 'monthly_membership',
+        label: 'Membership fee',
+        startDate: '2026-04-01',
+      },
+      { gymId: 'gym_1' },
+    );
+
+    expect(createFeeItem).toHaveBeenCalledWith({
+      amountPreTax: 100,
+      billingAnchorDate: null,
+      cadence: 'monthly',
+      category: 'monthly_membership',
+      endDate: null,
+      gstRate: null,
+      gymId: 'gym_1',
+      isActive: true,
+      label: 'Membership fee',
+      pstRate: null,
+      sortOrder: undefined,
+      startDate: '2026-04-01',
+      taxMode: 'inherit_default',
     });
   });
 

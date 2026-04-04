@@ -10,6 +10,7 @@ import {
 import { useAppTheme } from '../theme';
 
 type TextFieldProps = Omit<TextInputProps, 'onChangeText' | 'value'> & {
+  dense?: boolean;
   errorMessage?: string;
   helperText?: string;
   label: string;
@@ -18,6 +19,7 @@ type TextFieldProps = Omit<TextInputProps, 'onChangeText' | 'value'> & {
 };
 
 export function TextField({
+  dense = false,
   errorMessage,
   helperText,
   label,
@@ -34,6 +36,7 @@ export function TextField({
         {label}
       </Text>
       <TextInput
+        blurOnSubmit={false}
         onChangeText={onChangeText}
         placeholderTextColor={theme.colors.textMuted}
         style={[
@@ -43,8 +46,8 @@ export function TextField({
             borderColor: errorMessage ? theme.colors.danger : theme.colors.border,
             borderRadius: theme.radius.sm,
             color: theme.colors.textPrimary,
-            paddingHorizontal: theme.spacing.lg,
-            paddingVertical: theme.spacing.md,
+            paddingHorizontal: dense ? theme.spacing.md : theme.spacing.lg,
+            paddingVertical: dense ? theme.spacing.sm + 2 : theme.spacing.md,
           },
         ]}
         value={value}
@@ -61,20 +64,20 @@ export function TextField({
 
 const styles = StyleSheet.create({
   field: {
-    gap: 8,
+    gap: 6,
   },
   input: {
     borderWidth: 1,
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 20,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    lineHeight: 18,
+    lineHeight: 16,
   },
   meta: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

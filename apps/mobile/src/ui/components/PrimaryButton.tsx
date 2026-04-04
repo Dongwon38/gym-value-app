@@ -39,8 +39,8 @@ export function PrimaryButton({
               : theme.colors.accent,
           borderRadius: theme.radius.pill,
           opacity: disabled ? 0.65 : 1,
-          paddingHorizontal: theme.spacing.lg + theme.spacing.sm,
-          paddingVertical: theme.spacing.md,
+          paddingHorizontal: theme.spacing.lg,
+          paddingVertical: theme.spacing.sm + 2,
         },
         style,
       ]}>
@@ -56,8 +56,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 18,
   },
 });

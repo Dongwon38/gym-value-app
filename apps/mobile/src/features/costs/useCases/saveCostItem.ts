@@ -1,12 +1,18 @@
+import { defaultAppSettingsValues } from '../../../domain/constants';
 import { createFeeItem, updateFeeItem } from '../../../data/repositories';
-import type { FeeItem, FeeItemCadence, FeeItemCategory } from '../../../domain/models';
+import type {
+  AppSettings,
+  FeeItem,
+  FeeItemCadence,
+  FeeItemCategory,
+} from '../../../domain/models';
 import type { FeeItemFormValues } from '../../../domain/forms';
 import {
   getValidationErrors,
-  parseNumericInput,
   validateFeeItemForm,
 } from '../../../utils/validation';
 import type { ValidationIssue } from '../../../utils/validation';
+import { resolveCostEntryValues } from './costEntryMode';
 
 export class FeeItemFormValidationError extends Error {
   issues: ValidationIssue[];
@@ -18,34 +24,14 @@ export class FeeItemFormValidationError extends Error {
 }
 
 type SaveCostItemOptions = {
+  appSettings?: Pick<AppSettings, 'defaultGstRate' | 'defaultPstRate'> | null;
   existingFeeItem?: Pick<FeeItem, 'id' | 'sortOrder'> | null;
   gymId: string;
 };
 
-function getCustomTaxRates(values: FeeItemFormValues) {
-  if (values.taxMode !== 'custom') {
-    return {
-      gstRate: null,
-      pstRate: null,
-    };
-  }
-
-  const gstRate = parseNumericInput(values.gstRate);
-  const pstRate = parseNumericInput(values.pstRate);
-
-  if (gstRate === null || pstRate === null) {
-    throw new Error('Custom tax rates could not be parsed after validation.');
-  }
-
-  return {
-    gstRate,
-    pstRate,
-  };
-}
-
 export async function saveCostItem(
   values: FeeItemFormValues,
-  { existingFeeItem, gymId }: SaveCostItemOptions,
+  { appSettings, existingFeeItem, gymId }: SaveCostItemOptions,
 ) {
   const validationResult = validateFeeItemForm(values);
   const errors = getValidationErrors(validationResult);
@@ -54,28 +40,29 @@ export async function saveCostItem(
     throw new FeeItemFormValidationError(errors);
   }
 
-  const amountPreTax = parseNumericInput(values.amountPreTax);
+  const resolvedCostEntryValues = resolveCostEntryValues(values, appSettings ?? {
+    defaultGstRate: defaultAppSettingsValues.defaultGstRate,
+    defaultPstRate: defaultAppSettingsValues.defaultPstRate,
+  });
 
-  if (amountPreTax === null) {
+  if (!resolvedCostEntryValues) {
     throw new Error('Cost amount could not be parsed after validation.');
   }
 
-  const { gstRate, pstRate } = getCustomTaxRates(values);
-
   const input = {
-    amountPreTax,
+    amountPreTax: resolvedCostEntryValues.amountPreTax,
     billingAnchorDate: values.billingAnchorDate.trim() || null,
     cadence: values.cadence as FeeItemCadence,
     category: values.category as FeeItemCategory,
     endDate: values.endDate.trim() || null,
-    gstRate,
+    gstRate: resolvedCostEntryValues.gstRate,
     gymId,
     isActive: values.isActive,
     label: values.label.trim(),
-    pstRate,
+    pstRate: resolvedCostEntryValues.pstRate,
     sortOrder: existingFeeItem?.sortOrder,
     startDate: values.startDate.trim(),
-    taxMode: values.taxMode,
+    taxMode: resolvedCostEntryValues.taxMode,
   };
 
   if (existingFeeItem?.id) {

@@ -1,3 +1,4 @@
+import type { AppSettings } from '../../../domain/models';
 import { setFeeItemActiveState } from '../../../data/repositories';
 import type { FeeItemFormValues } from '../../../domain/forms';
 import type { ValidationIssue } from '../../../utils/validation';
@@ -19,6 +20,7 @@ export class CostSetupFormValidationError extends Error {
 }
 
 type SaveCostSetupOptions = {
+  appSettings?: Pick<AppSettings, 'defaultGstRate' | 'defaultPstRate'> | null;
   gymId: string;
 };
 
@@ -95,7 +97,7 @@ function buildCostSetupActions(lines: CostSetupLineDraft[]) {
 
 export async function saveCostSetup(
   lines: CostSetupLineDraft[],
-  { gymId }: SaveCostSetupOptions,
+  { appSettings, gymId }: SaveCostSetupOptions,
 ): Promise<SaveCostSetupSummary> {
   const actions = buildCostSetupActions(lines);
   const summary: SaveCostSetupSummary = {
@@ -120,6 +122,7 @@ export async function saveCostSetup(
     }
 
     await saveCostItem(action.values, {
+      appSettings,
       existingFeeItem: action.line.existingFeeItemId
         ? {
             id: action.line.existingFeeItemId,

@@ -8,10 +8,10 @@ import { ScreenContainer } from '../../ui/components';
 export function SettingsScreen() {
   return (
     <ScreenContainer
-      description="App tax defaults, primary gym setup, and assisted tracking fallback now share this tab."
+      description="Defaults, gym setup, and fallback."
       eyebrow="Settings"
       scroll
-      title="Tax defaults, gym setup, and assisted fallback live here.">
+      title="Settings">
       <AppSettingsSection />
       <GymSetupSection />
       <AssistedCheckInSection />

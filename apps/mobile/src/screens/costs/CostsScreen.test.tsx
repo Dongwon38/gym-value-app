@@ -74,7 +74,6 @@ describe('CostsScreen', () => {
       save: jest.fn(),
       saveFeedback: null,
       saveState: 'idle',
-      setLineEnabled: jest.fn(),
       setLineFieldValue: jest.fn(),
       starterLines: [
         {
@@ -84,6 +83,7 @@ describe('CostsScreen', () => {
           existingSortOrder: null,
           formValues: {
             amountPreTax: '',
+            amountInputMode: 'pre_tax',
             billingAnchorDate: '',
             cadence: 'bi_weekly',
             category: 'monthly_membership',
@@ -125,10 +125,10 @@ describe('CostsScreen', () => {
       await Promise.resolve();
     });
 
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Starter cost setup');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Costs');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Membership');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Add Custom Cost Line');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Save Cost Setup');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Add custom line');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Save');
   });
 
   it('renders inactive history rows separately from the setup form', async () => {

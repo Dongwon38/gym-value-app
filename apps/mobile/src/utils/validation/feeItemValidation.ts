@@ -1,4 +1,7 @@
-import type { FeeItemFormValues } from '../../domain/forms';
+import {
+  feeItemAmountInputModes,
+  type FeeItemFormValues,
+} from '../../domain/forms';
 import {
   feeItemAmountPreTaxLimits,
   feeItemTaxRateLimits,
@@ -70,6 +73,15 @@ export function validateFeeItemForm(values: FeeItemFormValues) {
     });
   }
 
+  if (!feeItemAmountInputModes.includes(values.amountInputMode)) {
+    issues.push({
+      code: 'fee_item.amount_input_mode.invalid',
+      field: 'amountInputMode',
+      message: validationMessages.feeItem.amountInputModeRequired,
+      severity: 'error',
+    });
+  }
+
   if (isBlank(values.startDate)) {
     issues.push({
       code: 'fee_item.start_date.required',
@@ -124,7 +136,7 @@ export function validateFeeItemForm(values: FeeItemFormValues) {
       message: validationMessages.feeItem.customTaxRatesRequired,
       severity: 'error',
     });
-  } else if (values.taxMode === 'custom') {
+  } else if (values.amountInputMode === 'custom') {
     const hasMissingCustomRate = gstRate === null || pstRate === null;
     const hasNegativeRate =
       (gstRate ?? 0) < feeItemTaxRateLimits.min ||

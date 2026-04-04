@@ -4,8 +4,17 @@ import type {
   FeeItemTaxMode,
 } from '../models';
 
+export const feeItemAmountInputModes = [
+  'pre_tax',
+  'post_tax',
+  'tax_exempt',
+  'custom',
+] as const;
+export type FeeItemAmountInputMode = (typeof feeItemAmountInputModes)[number];
+
 export interface FeeItemFormValues {
   amountPreTax: string;
+  amountInputMode: FeeItemAmountInputMode;
   billingAnchorDate: string;
   cadence: FeeItemCadence | '';
   category: FeeItemCategory | '';
@@ -20,6 +29,7 @@ export interface FeeItemFormValues {
 
 export const emptyFeeItemFormValues: FeeItemFormValues = {
   amountPreTax: '',
+  amountInputMode: 'pre_tax',
   billingAnchorDate: '',
   cadence: 'monthly',
   category: 'monthly_membership',

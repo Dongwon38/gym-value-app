@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { FeeItem } from '../../../domain/models';
 import type { FeeItemFormValues } from '../../../domain/forms';
@@ -9,6 +9,7 @@ import {
   buildCostSetupDraftState,
   createCustomCostSetupLine,
   restoreCostItemToDraftState,
+  type CostSetupDraftState,
   type CostSetupLineDraft,
 } from '../useCases/costSetup';
 import {
@@ -64,8 +65,10 @@ export function useCostSetupForm({
   const [appSettings, setAppSettings] = useState<Awaited<
     ReturnType<typeof getSettings>
   > | null>(null);
-  const [starterLines, setStarterLines] = useState<CostSetupLineDraft[]>([]);
-  const [customLines, setCustomLines] = useState<CostSetupLineDraft[]>([]);
+  const [draftState, setDraftState] = useState<CostSetupDraftState>({
+    customLines: [],
+    starterLines: [],
+  });
   const [saveState, setSaveState] = useState<CostSetupSaveState>('idle');
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const [validationErrorsByLine, setValidationErrorsByLine] = useState<
@@ -117,29 +120,22 @@ export function useCostSetupForm({
 
     const nextDraftState = buildCostSetupDraftState(costItems);
 
-    setStarterLines(nextDraftState.starterLines);
-    setCustomLines(nextDraftState.customLines);
+    setDraftState(nextDraftState);
     setValidationErrorsByLine({});
   }, [costItems, supportState]);
 
-  function updateLineCollection(
-    lines: CostSetupLineDraft[],
+  const patchLine = useCallback((
     lineId: string,
     updater: (line: CostSetupLineDraft) => CostSetupLineDraft,
-  ) {
-    return lines.map(line => (line.draftId === lineId ? updater(line) : line));
-  }
-
-  function patchLine(
-    lineId: string,
-    updater: (line: CostSetupLineDraft) => CostSetupLineDraft,
-  ) {
-    setStarterLines(currentLines =>
-      updateLineCollection(currentLines, lineId, updater),
-    );
-    setCustomLines(currentLines =>
-      updateLineCollection(currentLines, lineId, updater),
-    );
+  ) => {
+    setDraftState(currentDraftState => ({
+      customLines: currentDraftState.customLines.map(line =>
+        line.draftId === lineId ? updater(line) : line,
+      ),
+      starterLines: currentDraftState.starterLines.map(line =>
+        line.draftId === lineId ? updater(line) : line,
+      ),
+    }));
     setValidationErrorsByLine(currentErrors => {
       if (!currentErrors[lineId]) {
         return currentErrors;
@@ -149,37 +145,39 @@ export function useCostSetupForm({
       delete nextErrors[lineId];
       return nextErrors;
     });
-  }
+  }, []);
 
   return {
-    addCustomLine: () => {
-      setCustomLines(currentLines => [...currentLines, createCustomCostSetupLine()]);
+    addCustomLine: useCallback(() => {
+      setDraftState(currentDraftState => ({
+        ...currentDraftState,
+        customLines: [
+          ...currentDraftState.customLines,
+          createCustomCostSetupLine(),
+        ],
+      }));
       setSaveFeedback(null);
       setSaveState('idle');
-    },
+    }, []),
     appSettings,
-    customLines,
+    customLines: draftState.customLines,
     hasPrimaryGym: primaryGym !== null,
     primaryGym,
-    restoreCostItem: (feeItem: FeeItem) => {
-      const nextDraftState = restoreCostItemToDraftState(
-        {
-          customLines,
-          starterLines,
-        },
-        feeItem,
+    restoreCostItem: useCallback((feeItem: FeeItem) => {
+      setDraftState(currentDraftState =>
+        restoreCostItemToDraftState(currentDraftState, feeItem),
       );
-
-      setStarterLines(nextDraftState.starterLines);
-      setCustomLines(nextDraftState.customLines);
       setValidationErrorsByLine({});
       setSaveFeedback(`Restored ${feeItem.label} to the setup form. Save to reactivate it.`);
       setSaveState('idle');
-    },
-    removeCustomLine: (lineId: string) => {
-      setCustomLines(currentLines =>
-        currentLines.filter(line => line.draftId !== lineId),
-      );
+    }, []),
+    removeCustomLine: useCallback((lineId: string) => {
+      setDraftState(currentDraftState => ({
+        ...currentDraftState,
+        customLines: currentDraftState.customLines.filter(
+          line => line.draftId !== lineId,
+        ),
+      }));
       setValidationErrorsByLine(currentErrors => {
         if (!currentErrors[lineId]) {
           return currentErrors;
@@ -189,7 +187,7 @@ export function useCostSetupForm({
         delete nextErrors[lineId];
         return nextErrors;
       });
-    },
+    }, []),
     save: async () => {
       setSaveState('idle');
       setSaveFeedback(null);
@@ -205,8 +203,9 @@ export function useCostSetupForm({
       try {
         setSaveState('saving');
         const summary = await saveCostSetup(
-          [...starterLines, ...customLines],
+          [...draftState.starterLines, ...draftState.customLines],
           {
+            appSettings,
             gymId: primaryGym.id,
           },
         );
@@ -234,44 +233,42 @@ export function useCostSetupForm({
     },
     saveFeedback,
     saveState,
-    setLineEnabled: (lineId: string, enabled: boolean) => {
-      patchLine(lineId, line => ({
-        ...line,
-        enabled,
-      }));
-      setSaveFeedback(null);
-      setSaveState('idle');
-    },
-    setLineFieldValue: <Field extends keyof FeeItemFormValues>(
+    setLineFieldValue: useCallback(<Field extends keyof FeeItemFormValues>(
       lineId: string,
       field: Field,
       value: FeeItemFormValues[Field],
     ) => {
       patchLine(lineId, line => ({
         ...line,
-        enabled:
-          field === 'amountPreTax' &&
-          typeof value === 'string' &&
-          value.trim().length > 0
-            ? true
-            : line.enabled,
         formValues: {
           ...line.formValues,
+          ...(field === 'amountInputMode'
+            ? {
+                gstRate: value === 'custom' ? line.formValues.gstRate : '',
+                pstRate: value === 'custom' ? line.formValues.pstRate : '',
+                taxMode:
+                  value === 'custom'
+                    ? 'custom'
+                    : value === 'tax_exempt'
+                      ? 'none'
+                      : 'inherit_default',
+              }
+            : {}),
           [field]: value,
         },
       }));
       setSaveFeedback(null);
       setSaveState('idle');
-    },
-    starterLines,
+    }, [patchLine]),
+    starterLines: draftState.starterLines,
     supportError,
     supportState,
-    toggleLineAdvanced: (lineId: string) => {
+    toggleLineAdvanced: useCallback((lineId: string) => {
       patchLine(lineId, line => ({
         ...line,
         showAdvanced: !line.showAdvanced,
       }));
-    },
+    }, [patchLine]),
     validationErrorsByLine,
   };
 }

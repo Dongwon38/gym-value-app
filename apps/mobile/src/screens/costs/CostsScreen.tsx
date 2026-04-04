@@ -29,7 +29,6 @@ export function CostsScreen() {
     save,
     saveFeedback,
     saveState,
-    setLineEnabled,
     setLineFieldValue,
     starterLines,
     supportError,
@@ -43,17 +42,15 @@ export function CostsScreen() {
 
   return (
     <ScreenContainer
-      description="Start with the four common gym charges, leave any starter line blank if it does not apply, and add custom rows only when you need them."
+      description="Compact cost editor for recurring and one-time fees."
       eyebrow="Costs"
       scroll
-      title="Track recurring fees and one-time charges.">
-      <Card
-        subtitle="The active rows in SQLite hydrate into the starter cost form. Inactive rows remain below as history so new setup edits stay focused."
-        title="Cost setup overview">
+      title="Costs">
+      <Card title="Saved costs">
         <Text style={[styles.note, { color: theme.colors.textSecondary }]}>
           {activeCount === 0
-            ? 'No active cost rows are saved yet. The starter setup below is ready for membership, signup, annual, and locker costs.'
-            : `${activeCount} active cost row${activeCount === 1 ? '' : 's'} are loaded into the setup form. ${inactiveCount} inactive row${inactiveCount === 1 ? '' : 's'} remain in history.`}
+            ? 'Start with the four default lines below.'
+            : `${activeCount} active · ${inactiveCount} inactive`}
         </Text>
         <Pressable
           accessibilityRole="button"
@@ -61,7 +58,7 @@ export function CostsScreen() {
           style={({ pressed }) => [
             styles.inlineAction,
             {
-              marginTop: theme.spacing.lg,
+              marginTop: theme.spacing.md,
               opacity: pressed ? 0.7 : 1,
             },
           ]}>
@@ -101,7 +98,6 @@ export function CostsScreen() {
           onSave={async () => {
             await save();
           }}
-          onSetLineEnabled={setLineEnabled}
           onSetLineFieldValue={setLineFieldValue}
           onToggleLineAdvanced={toggleLineAdvanced}
           primaryGymName={primaryGym?.name}
@@ -116,7 +112,6 @@ export function CostsScreen() {
 
       {loadState === 'ready' && inactiveCostItems.length > 0 ? (
         <Card
-          subtitle="Inactive rows stay visible for audit history. Restore a row to the setup form when you want to reactivate it on the next save."
           title="Inactive cost history">
           <View style={styles.historyList}>
             {inactiveCostItems.map(costItem => (

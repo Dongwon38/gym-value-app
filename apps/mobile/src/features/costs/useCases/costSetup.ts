@@ -1,4 +1,3 @@
-import { calculateFeeItemTotal } from '../../../domain/calculations/fees';
 import { defaultAppSettingsValues } from '../../../domain/constants';
 import {
   emptyFeeItemFormValues,
@@ -15,6 +14,7 @@ import {
   createNewCostItemFormValues,
   mapFeeItemToFormValues,
 } from './costItemForm';
+import { resolveCostEntryValues } from './costEntryMode';
 
 export const starterCostPresetKeys = [
   'membership',
@@ -285,7 +285,7 @@ export function getNormalizedCostSetupLineLabel(line: CostSetupLineDraft) {
 export function shouldPersistCostSetupLine(line: CostSetupLineDraft) {
   const amountPreTax = parseNumericInput(line.formValues.amountPreTax);
 
-  return line.enabled && amountPreTax !== null;
+  return amountPreTax !== null;
 }
 
 export function shouldShowBillingAnchorDate(
@@ -313,28 +313,26 @@ export function getCostSetupLinePreview(
     locale: appSettings?.locale ?? defaultAppSettingsValues.locale,
   };
 
-  const total = calculateFeeItemTotal(
+  const resolvedCostEntryValues = resolveCostEntryValues(
     {
-      amountPreTax,
-      gstRate:
-        line.formValues.taxMode === 'custom'
-          ? parseNumericInput(line.formValues.gstRate)
-          : null,
-      pstRate:
-        line.formValues.taxMode === 'custom'
-          ? parseNumericInput(line.formValues.pstRate)
-          : null,
-      taxMode: line.formValues.taxMode,
+      amountInputMode: line.formValues.amountInputMode,
+      amountPreTax: line.formValues.amountPreTax,
+      gstRate: line.formValues.gstRate,
+      pstRate: line.formValues.pstRate,
     },
     resolvedSettings,
   );
 
+  if (!resolvedCostEntryValues) {
+    return null;
+  }
+
   return {
     currency: resolvedSettings.currency,
     locale: resolvedSettings.locale,
-    preTaxAmount: total.preTaxAmount,
-    totalAmount: total.totalAmount,
-    totalTaxAmount: total.totalTaxAmount,
+    preTaxAmount: resolvedCostEntryValues.amountPreTax,
+    totalAmount: resolvedCostEntryValues.totalAmount,
+    totalTaxAmount: resolvedCostEntryValues.totalTaxAmount,
   };
 }
 

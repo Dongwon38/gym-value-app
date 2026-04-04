@@ -310,7 +310,7 @@ MVP에서는 이 기능이 없어도 되지만, 설계상 고려한다.
 각 비용 항목은 아래 값을 가진다.
 - label
 - category
-- amount (pre-tax)
+- amount
 - cadence
 - start date
 - end date (optional)
@@ -348,8 +348,8 @@ no tax 선택 시:
 - GST/PST 입력은 숨기거나 비운다.
 
 ### 8.7.1 금액 입력 원칙
-- 사용자는 항상 **세전 금액**을 입력한다.
-- 앱은 line별 **세후 금액 preview**를 계산해 보여준다.
+- 사용자는 line별로 `세전 / 세후 / 비과세 / 커스텀` 입력 모드를 고를 수 있다.
+- 앱은 저장용 pre-tax 값과 preview 금액을 line별로 계산해 보여준다.
 - `tax-inclusive` 입력은 이 블록 범위에 포함하지 않는다.
 
 ### 8.8 삭제와 비활성화
@@ -466,7 +466,7 @@ gym 설정, 권한, 알림, 기본 세금, 앱 환경 값을 관리한다. **비
 ### 11.2 line별 입력 필드
 - label
 - category
-- amount (pre-tax)
+- amount
 - cadence
 - start date
 - end date (optional)
@@ -476,11 +476,11 @@ gym 설정, 권한, 알림, 기본 세금, 앱 환경 값을 관리한다. **비
 - active
 
 ### 11.3 입력 원칙
-- amount는 세전 숫자만 허용
+- amount는 숫자 입력이며, 해석은 선택된 입력 모드에 따른다
 - 음수 불가
 - cadence에 따라 필요한 필드만 보여줌
 - annual / bi-weekly에서는 billing anchor date를 optional로 둘 수 있음
-- 세후 금액 preview를 line별로 보여줌
+- 입력 모드에 맞는 preview 금액을 line별로 보여줌
 - 비어 있는 starter line은 저장하지 않음
 
 ### 11.4 예시 UX

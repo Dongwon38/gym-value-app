@@ -23,10 +23,10 @@ export function HomeScreen() {
 
   return (
     <ScreenContainer
-      description="Current year KPI cards now read from local dashboard stats and separate gym, cost, and visit empty states."
+      description="Current year KPI snapshot."
       eyebrow="Home"
       scroll
-      title="Your gym value dashboard starts here.">
+      title="Dashboard">
       {loadState === 'loading' ? (
         <Card
           subtitle="The Home query is loading primary gym, settings, fee items, and visits before building dashboard stats."

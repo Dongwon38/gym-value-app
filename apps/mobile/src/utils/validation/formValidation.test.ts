@@ -60,6 +60,7 @@ describe('validateFeeItemForm', () => {
     const result = validateFeeItemForm({
       ...emptyFeeItemFormValues,
       amountPreTax: '49.99',
+      amountInputMode: 'tax_exempt',
       billingAnchorDate: '2026-01-15',
       cadence: 'bi_weekly',
       category: 'monthly_membership',
@@ -75,6 +76,7 @@ describe('validateFeeItemForm', () => {
     const result = validateFeeItemForm({
       ...emptyFeeItemFormValues,
       amountPreTax: '-1',
+      amountInputMode: 'custom',
       cadence: '',
       category: '',
       endDate: '2026-01-01',
@@ -111,6 +113,21 @@ describe('validateFeeItemForm', () => {
 
     expect(getValidationErrors(result).map(issue => issue.field)).toEqual(
       expect.arrayContaining(['billingAnchorDate']),
+    );
+  });
+
+  it('rejects an invalid amount input mode', () => {
+    const result = validateFeeItemForm({
+      ...emptyFeeItemFormValues,
+      amountInputMode: 'custom_mode' as never,
+      amountPreTax: '49.99',
+      category: 'monthly_membership',
+      label: 'Membership',
+      startDate: '2026-01-01',
+    });
+
+    expect(getValidationErrors(result).map(issue => issue.field)).toEqual(
+      expect.arrayContaining(['amountInputMode']),
     );
   });
 });

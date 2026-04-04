@@ -1,6 +1,7 @@
 export const validationMessages = {
   feeItem: {
     amountMustBeNonNegative: 'Enter an amount that is 0 or greater.',
+    amountInputModeRequired: 'Select how this amount should be interpreted.',
     cadenceRequired: 'Select a valid cadence.',
     customCadenceNotSupported:
       'Custom cadence is not supported in v0.1. Choose one-time, bi-weekly, monthly, or annual.',

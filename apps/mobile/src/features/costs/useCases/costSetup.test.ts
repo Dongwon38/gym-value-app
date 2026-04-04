@@ -94,6 +94,31 @@ describe('costSetup', () => {
     });
   });
 
+  it('builds a pre-tax preview from a post-tax entered amount', () => {
+    const draftState = buildCostSetupDraftState([]);
+    const preview = getCostSetupLinePreview(
+      {
+        formValues: {
+          ...draftState.starterLines[0].formValues,
+          amountInputMode: 'post_tax',
+          amountPreTax: '112',
+        },
+      },
+      {
+        currency: 'CAD',
+        defaultGstRate: 0.05,
+        defaultPstRate: 0.07,
+        locale: 'en-CA',
+      },
+    );
+
+    expect(preview).toMatchObject({
+      preTaxAmount: 100,
+      totalAmount: 112,
+      totalTaxAmount: 12,
+    });
+  });
+
   it('restores an inactive starter-category row back into the matching starter line', () => {
     const draftState = buildCostSetupDraftState([]);
     const restoredState = restoreCostItemToDraftState(

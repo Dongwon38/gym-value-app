@@ -73,10 +73,10 @@ export function VisitsScreen() {
 
   return (
     <ScreenContainer
-      description="Manual visit records now load from SQLite, allow completed or active saves, and support soft cancel from this screen."
+      description="Manual visits and active session."
       eyebrow="Visits"
       scroll
-      title="Manual visit tracking will live here.">
+      title="Visits">
       <Card
         subtitle="Read path, add/edit form wiring, duplicate active guard, and cancelled row filtering are live on the same surface."
         title="Visit feed overview">

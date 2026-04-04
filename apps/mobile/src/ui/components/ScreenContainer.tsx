@@ -7,7 +7,7 @@ import { appTheme, useAppTheme } from '../theme';
 type ScreenContainerProps = PropsWithChildren<{
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   scroll?: boolean;
 }>;
 
@@ -29,9 +29,11 @@ export function ScreenContainer({
         style={[styles.title, { color: theme.colors.textPrimary }]}>
         {title}
       </Text>
-      <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
-        {description}
-      </Text>
+      {description ? (
+        <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
+          {description}
+        </Text>
+      ) : null}
       <View style={[styles.content, { marginTop: theme.spacing.xl }]}>
         {children}
       </View>
@@ -42,12 +44,14 @@ export function ScreenContainer({
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
       {scroll ? (
         <ScrollView
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
             styles.scrollContent,
             {
               backgroundColor: theme.colors.background,
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.xl + theme.spacing.xs,
+              paddingHorizontal: theme.spacing.lg,
+              paddingVertical: theme.spacing.lg,
             },
           ]}>
           {content}
@@ -58,8 +62,8 @@ export function ScreenContainer({
             styles.container,
             {
               backgroundColor: theme.colors.background,
-              paddingHorizontal: theme.spacing.xl,
-              paddingVertical: theme.spacing.xl + theme.spacing.xs,
+              paddingHorizontal: theme.spacing.lg,
+              paddingVertical: theme.spacing.lg,
             },
           ]}>
           {content}
@@ -84,14 +88,14 @@ const styles = StyleSheet.create({
   },
   title: {
     ...appTheme.typography.title,
-    marginTop: 10,
+    marginTop: 8,
   },
   description: {
     ...appTheme.typography.body,
-    marginTop: 12,
+    marginTop: 8,
     maxWidth: 640,
   },
   content: {
-    gap: 16,
+    gap: 12,
   },
 });
