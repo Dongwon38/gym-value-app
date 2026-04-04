@@ -1,5 +1,5 @@
 import { createFeeItem, updateFeeItem } from '../../../data/repositories';
-import type { FeeItem, FeeItemCadenceForV01, FeeItemCategory } from '../../../domain/models';
+import type { FeeItem, FeeItemCadence, FeeItemCategory } from '../../../domain/models';
 import type { FeeItemFormValues } from '../../../domain/forms';
 import {
   getValidationErrors,
@@ -64,7 +64,8 @@ export async function saveCostItem(
 
   const input = {
     amountPreTax,
-    cadence: values.cadence as FeeItemCadenceForV01,
+    billingAnchorDate: values.billingAnchorDate.trim() || null,
+    cadence: values.cadence as FeeItemCadence,
     category: values.category as FeeItemCategory,
     endDate: values.endDate.trim() || null,
     gstRate,

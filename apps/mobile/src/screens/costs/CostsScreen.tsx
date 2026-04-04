@@ -212,7 +212,9 @@ export function CostsScreen() {
               <Text style={[styles.meta, { color: theme.colors.textMuted }]}>
                 {costItem.taxMode === 'inherit_default'
                   ? 'Tax: using default GST/PST.'
-                  : 'Tax: custom GST/PST override.'}
+                  : costItem.taxMode === 'none'
+                    ? 'Tax: no tax applied.'
+                    : 'Tax: custom GST/PST override.'}
               </Text>
               {!costItem.isActive ? (
                 <Text style={[styles.meta, { color: theme.colors.textMuted }]}>

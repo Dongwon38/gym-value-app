@@ -27,6 +27,7 @@ function createAppSettings(
 function createFeeItem(overrides: Partial<FeeItem> = {}): FeeItem {
   return {
     amountPreTax: 50,
+    billingAnchorDate: null,
     cadence: 'monthly',
     category: 'monthly_membership',
     createdAt: '2026-01-01T00:00:00.000Z',

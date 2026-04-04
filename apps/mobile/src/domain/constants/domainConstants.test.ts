@@ -36,6 +36,7 @@ describe('domain constants', () => {
     ]);
     expect(feeItemCadences).toEqual([
       'one_time',
+      'bi_weekly',
       'monthly',
       'annual',
       'custom',
@@ -45,7 +46,7 @@ describe('domain constants', () => {
       'monthly',
       'annual',
     ]);
-    expect(feeItemTaxModes).toEqual(['inherit_default', 'custom']);
+    expect(feeItemTaxModes).toEqual(['inherit_default', 'none', 'custom']);
     expect(homePrimaryMetrics).toEqual(['cost_per_visit']);
     expect(locationPromptTypes).toEqual([
       'enter',

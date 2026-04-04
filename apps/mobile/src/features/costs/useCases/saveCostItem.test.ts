@@ -32,6 +32,7 @@ describe('saveCostItem', () => {
 
     expect(createFeeItem).toHaveBeenCalledWith({
       amountPreTax: 59.99,
+      billingAnchorDate: null,
       cadence: 'monthly',
       category: 'monthly_membership',
       endDate: null,
@@ -70,6 +71,7 @@ describe('saveCostItem', () => {
 
     expect(updateFeeItem).toHaveBeenCalledWith('fee_1', {
       amountPreTax: 25,
+      billingAnchorDate: null,
       cadence: 'monthly',
       category: 'locker_fee',
       endDate: null,

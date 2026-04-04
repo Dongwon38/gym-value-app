@@ -1,12 +1,13 @@
 import type {
-  FeeItemCadenceForV01,
+  FeeItemCadence,
   FeeItemCategory,
   FeeItemTaxMode,
 } from '../models';
 
 export interface FeeItemFormValues {
   amountPreTax: string;
-  cadence: FeeItemCadenceForV01 | '';
+  billingAnchorDate: string;
+  cadence: FeeItemCadence | '';
   category: FeeItemCategory | '';
   endDate: string;
   gstRate: string;
@@ -19,6 +20,7 @@ export interface FeeItemFormValues {
 
 export const emptyFeeItemFormValues: FeeItemFormValues = {
   amountPreTax: '',
+  billingAnchorDate: '',
   cadence: 'monthly',
   category: 'monthly_membership',
   endDate: '',

@@ -11,6 +11,7 @@ import { useCostItems } from './useCostItems';
 function createFeeItem(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     amountPreTax: 59.99,
+    billingAnchorDate: null,
     cadence: 'monthly',
     category: 'monthly_membership',
     createdAt: '2026-04-02T10:00:00.000Z',

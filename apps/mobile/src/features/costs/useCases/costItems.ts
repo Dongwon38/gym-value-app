@@ -16,6 +16,7 @@ const categoryLabels: Record<FeeItemCategory, string> = {
 
 const cadenceLabels: Record<FeeItemCadence, string> = {
   one_time: 'One-time',
+  bi_weekly: 'Bi-weekly',
   monthly: 'Monthly',
   annual: 'Annual',
   custom: 'Custom cadence',

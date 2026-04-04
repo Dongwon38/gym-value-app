@@ -3,6 +3,7 @@ import { getDatabase } from '../db';
 
 export type FeeItemRow = {
   amount_pre_tax: number;
+  billing_anchor_date: string | null;
   cadence: FeeItem['cadence'];
   category: FeeItem['category'];
   created_at: string;
@@ -21,6 +22,7 @@ export type FeeItemRow = {
 
 export interface FeeItemWriteInput {
   amountPreTax: number;
+  billingAnchorDate?: string | null;
   cadence: FeeItem['cadence'];
   category: FeeItem['category'];
   endDate?: string | null;
@@ -46,6 +48,7 @@ function buildSelectFeeItemByIdSql() {
       category,
       label,
       amount_pre_tax,
+      billing_anchor_date,
       cadence,
       start_date,
       end_date,
@@ -111,6 +114,7 @@ async function getNextSortOrder(
 export function mapFeeItemRowToModel(row: FeeItemRow): FeeItem {
   return {
     amountPreTax: row.amount_pre_tax,
+    billingAnchorDate: row.billing_anchor_date,
     cadence: row.cadence,
     category: row.category,
     createdAt: row.created_at,
@@ -138,6 +142,7 @@ export async function listFeeItems() {
         category,
         label,
         amount_pre_tax,
+        billing_anchor_date,
         cadence,
         start_date,
         end_date,
@@ -174,6 +179,7 @@ export async function createFeeItem(input: FeeItemWriteInput) {
           category,
           label,
           amount_pre_tax,
+          billing_anchor_date,
           cadence,
           start_date,
           end_date,
@@ -185,7 +191,7 @@ export async function createFeeItem(input: FeeItemWriteInput) {
           created_at,
           updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         feeItemId,
@@ -193,6 +199,7 @@ export async function createFeeItem(input: FeeItemWriteInput) {
         input.category,
         input.label,
         input.amountPreTax,
+        input.billingAnchorDate ?? null,
         input.cadence,
         input.startDate,
         input.endDate ?? null,
@@ -224,6 +231,7 @@ export async function updateFeeItem(feeItemId: string, input: FeeItemWriteInput)
           category = ?,
           label = ?,
           amount_pre_tax = ?,
+          billing_anchor_date = ?,
           cadence = ?,
           start_date = ?,
           end_date = ?,
@@ -240,6 +248,7 @@ export async function updateFeeItem(feeItemId: string, input: FeeItemWriteInput)
         input.category,
         input.label,
         input.amountPreTax,
+        input.billingAnchorDate ?? null,
         input.cadence,
         input.startDate,
         input.endDate ?? null,

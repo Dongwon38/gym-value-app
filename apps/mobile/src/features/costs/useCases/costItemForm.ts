@@ -20,6 +20,7 @@ export function createNewCostItemFormValues(): FeeItemFormValues {
 export function mapFeeItemToFormValues(feeItem: FeeItem): FeeItemFormValues {
   return {
     amountPreTax: String(feeItem.amountPreTax),
+    billingAnchorDate: feeItem.billingAnchorDate ?? '',
     cadence: feeItem.cadence === 'custom' ? '' : feeItem.cadence,
     category: feeItem.category,
     endDate: feeItem.endDate ?? '',

@@ -1,5 +1,5 @@
-import { migration001InitialSchema } from './001_initial_schema';
-import { runMigrations, splitSqlStatements } from './runner';
+import { migration002ExpandFeeItemsCostStructure } from './002_expand_fee_items_cost_structure';
+import { getAppMigrations, runMigrations, splitSqlStatements } from './runner';
 
 function createQueryResult<Row extends Record<string, unknown>>(rows: Row[] = []) {
   return {
@@ -59,6 +59,16 @@ describe('runMigrations', () => {
 
     await runMigrations(db as never);
 
+    const appMigrations = getAppMigrations();
+    const executableStatementsCount = appMigrations.reduce(
+      (total, migration) =>
+        total +
+        splitSqlStatements(migration.upSql).filter(
+          statement => !/^PRAGMA\s+foreign_keys\s*=\s*ON$/i.test(statement),
+        ).length,
+      0,
+    );
+
     expect(executeAsync).toHaveBeenCalledTimes(3);
     expect(executeAsync).toHaveBeenNthCalledWith(1, 'PRAGMA foreign_keys = ON');
     expect(executeAsync).toHaveBeenNthCalledWith(
@@ -69,25 +79,42 @@ describe('runMigrations', () => {
       3,
       'SELECT version FROM schema_migrations ORDER BY version ASC',
     );
-    expect(transaction).toHaveBeenCalledTimes(1);
-
-    const executableStatements = splitSqlStatements(
-      migration001InitialSchema.upSql,
-    ).filter(statement => !/^PRAGMA\s+foreign_keys\s*=\s*ON$/i.test(statement));
-
-    expect(txExecuteAsync).toHaveBeenCalledTimes(executableStatements.length + 1);
-    expect(txExecuteAsync).toHaveBeenNthCalledWith(
-      executableStatements.length + 1,
+    expect(transaction).toHaveBeenCalledTimes(appMigrations.length);
+    expect(txExecuteAsync).toHaveBeenCalledTimes(
+      executableStatementsCount + appMigrations.length,
+    );
+    expect(txExecuteAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO schema_migrations'),
       [1, '001_initial_schema', expect.any(String)],
+    );
+    expect(txExecuteAsync).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO schema_migrations'),
+      [2, '002_expand_fee_items_cost_structure', expect.any(String)],
     );
   });
 
   it('skips already applied migrations', async () => {
-    const { db, transaction } = createDatabaseMock([1]);
+    const { db, transaction } = createDatabaseMock([1, 2]);
 
     await runMigrations(db as never);
 
     expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it('applies only missing later migrations when earlier versions already exist', async () => {
+    const { db, transaction, txExecuteAsync } = createDatabaseMock([1]);
+
+    await runMigrations(db as never);
+
+    const executableStatements = splitSqlStatements(
+      migration002ExpandFeeItemsCostStructure.upSql,
+    );
+
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(txExecuteAsync).toHaveBeenCalledTimes(executableStatements.length + 1);
+    expect(txExecuteAsync).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO schema_migrations'),
+      [2, '002_expand_fee_items_cost_structure', expect.any(String)],
+    );
   });
 });

@@ -13,6 +13,7 @@ import {
 function createFeeItemRow(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     amount_pre_tax: 59.99,
+    billing_anchor_date: null,
     cadence: 'monthly',
     category: 'monthly_membership',
     created_at: '2026-04-02T10:00:00.000Z',
@@ -82,6 +83,7 @@ describe('FeeItemRepository', () => {
         'signup_fee',
         'Sign-up',
         25,
+        null,
         'one_time',
         '2026-04-01',
         null,
@@ -137,6 +139,7 @@ describe('FeeItemRepository', () => {
         'monthly_membership',
         'Premium membership',
         79.99,
+        null,
         'monthly',
         '2026-04-01',
         null,
@@ -210,6 +213,7 @@ describe('FeeItemRepository', () => {
     expect(costItems).toHaveLength(2);
     expect(costItems[0]?.isActive).toBe(true);
     expect(costItems[0]?.amountPreTax).toBe(59.99);
+    expect(costItems[0]?.billingAnchorDate).toBeNull();
     expect(costItems[1]?.id).toBe('fee_2');
     expect(costItems[1]?.isActive).toBe(false);
   });
