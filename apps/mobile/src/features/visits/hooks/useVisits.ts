@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { Visit } from '../../../domain/models';
 import { getVisits } from '../useCases/visits';
@@ -47,14 +47,15 @@ export function useVisits() {
   }, [reloadToken]);
 
   const activeCount = visits.filter(visit => visit.status === 'active').length;
+  const reload = useCallback(() => {
+    setReloadToken(currentToken => currentToken + 1);
+  }, []);
 
   return {
     activeCount,
     loadError,
     loadState,
-    reload: async () => {
-      setReloadToken(currentToken => currentToken + 1);
-    },
+    reload,
     visits,
   };
 }

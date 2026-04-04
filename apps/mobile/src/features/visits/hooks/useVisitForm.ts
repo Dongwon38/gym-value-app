@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { VisitFormValues } from '../../../domain/forms';
 import type { Gym, Visit } from '../../../domain/models';
@@ -19,6 +19,7 @@ type VisitEditorMode = 'closed' | 'create' | 'edit';
 type VisitSaveState = 'idle' | 'saving' | 'success' | 'error';
 
 export function useVisitForm() {
+  const [reloadToken, setReloadToken] = useState(0);
   const [primaryGym, setPrimaryGym] = useState<Gym | null>(null);
   const [activeVisit, setActiveVisit] = useState<Visit | null>(null);
   const [editorMode, setEditorMode] = useState<VisitEditorMode>('closed');
@@ -64,7 +65,7 @@ export function useVisitForm() {
     return () => {
       isMounted = false;
     };
-  }, [editingVisit]);
+  }, [editingVisit, reloadToken]);
 
   const effectiveGymId = editingVisit?.gymId ?? primaryGym?.id ?? '';
   const existingActiveVisits =
@@ -86,6 +87,9 @@ export function useVisitForm() {
     formValues.status === 'completed'
       ? deriveCompletedVisitDurationMinutes(formValues)
       : null;
+  const reloadContext = useCallback(() => {
+    setReloadToken(currentToken => currentToken + 1);
+  }, []);
 
   return {
     activeVisit,
@@ -104,6 +108,7 @@ export function useVisitForm() {
       );
     },
     primaryGym,
+    reloadContext,
     save: async () => {
       setHasReviewed(true);
       setSaveState('idle');

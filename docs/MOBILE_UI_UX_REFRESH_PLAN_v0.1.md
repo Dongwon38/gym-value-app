@@ -20,6 +20,7 @@
   - 전체 visual tone은 더 밝은 neutral white + soft green 방향으로 이동
 - 구현 진행 상태:
   - `UIR-01` 착수
+  - `UIR-03` 1차 구현 완료
   - `UIR-04` 1차 구현 진행 중
 
 ---
@@ -300,6 +301,9 @@
 - Goal: Visits를 tracking timeline처럼 보이게 한다.
 - Scope: period filter, heatmap, visit row, edit sheet
 - Acceptance: add/edit flow가 screen 밀도를 해치지 않는다.
+- 상태 메모:
+  - segmented period filter, activity heatmap, compact visit rows, quick edit bottom sheet가 1차 반영됨
+  - active visit treatment, visual polish, edit sheet density QA는 후속 polish 대상
 
 ### `UIR-04` Costs list-first redesign
 - Goal: Costs를 list + sheet 중심으로 바꾼다.

@@ -10,18 +10,11 @@ jest.mock('../../features/visits/useCases/cancelVisit', () => ({
   cancelVisit: jest.fn(),
 }));
 
-jest.mock('../../features/visits/useCases/visits', () => ({
-  formatVisitDuration: jest.fn((durationMinutes: number | null) =>
-    durationMinutes === null ? 'In progress' : '1 hr',
-  ),
-  formatVisitStatus: jest.fn((status: 'active' | 'completed') =>
-    status === 'active' ? 'Active' : 'Completed',
-  ),
-  formatVisitWindow: jest.fn(() => '2026-04-02 10:00 to 11:00'),
-}));
-
-jest.mock('../../features/visits/useCases/sessionReview', () => ({
-  shouldReviewActiveVisit: jest.fn(() => false),
+jest.mock('@react-navigation/native', () => ({
+  useIsFocused: jest.fn(() => true),
+  useNavigation: () => ({
+    navigate: jest.fn(),
+  }),
 }));
 
 jest.mock('react-native-safe-area-context', () => {
@@ -37,6 +30,7 @@ jest.mock('react-native-safe-area-context', () => {
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 
+import { useIsFocused } from '@react-navigation/native';
 import { useVisitForm } from '../../features/visits/hooks/useVisitForm';
 import { useVisits } from '../../features/visits/hooks/useVisits';
 import { VisitsScreen } from './VisitsScreen';
@@ -44,16 +38,16 @@ import { VisitsScreen } from './VisitsScreen';
 function createVisit(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     confidence: 'high',
-    createdAt: '2026-04-02T10:00:00.000Z',
-    durationMinutes: 60,
-    endedAt: '2026-04-02T11:00:00.000Z',
+    createdAt: '2026-04-03T18:10:00-07:00',
+    durationMinutes: 75,
+    endedAt: '2026-04-03T19:25:00-07:00',
     gymId: 'gym_1',
     id: 'visit_1',
     notes: 'Upper body',
     source: 'manual',
-    startedAt: '2026-04-02T10:00:00.000Z',
+    startedAt: '2026-04-03T18:10:00-07:00',
     status: 'completed',
-    updatedAt: '2026-04-02T11:00:00.000Z',
+    updatedAt: '2026-04-03T19:25:00.000Z',
     ...overrides,
   };
 }
@@ -63,7 +57,7 @@ describe('VisitsScreen', () => {
     jest.clearAllMocks();
   });
 
-  function mockClosedEditor() {
+  function mockClosedEditor(overrides: Partial<Record<string, unknown>> = {}) {
     (useVisitForm as jest.Mock).mockReturnValue({
       activeVisit: null,
       closeEditor: jest.fn(),
@@ -71,44 +65,31 @@ describe('VisitsScreen', () => {
       editingVisit: null,
       editorMode: 'closed',
       errors: [],
-      formValues: null,
+      formValues: {
+        date: '2026-04-03',
+        endedAt: '19:25',
+        gymId: 'gym_1',
+        notes: '',
+        startedAt: '18:10',
+        status: 'completed',
+      },
       hasPrimaryGym: true,
       markVisitCancelled: jest.fn(),
       primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
+      reloadContext: jest.fn(),
       save: jest.fn(),
       saveFeedback: null,
       saveState: 'idle',
       setFieldValue: jest.fn(),
       startCreate: jest.fn(),
       startEdit: jest.fn(),
+      ...overrides,
     });
   }
 
-  it('renders the empty state when no visits exist', async () => {
+  it('renders the refreshed visit timeline', async () => {
     mockClosedEditor();
     (useVisits as jest.Mock).mockReturnValue({
-      activeCount: 0,
-      loadError: null,
-      loadState: 'ready',
-      reload: jest.fn(),
-      visits: [],
-    });
-
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-
-    await ReactTestRenderer.act(async () => {
-      renderer = ReactTestRenderer.create(<VisitsScreen />);
-      await Promise.resolve();
-    });
-
-    expect(JSON.stringify(renderer!.toJSON())).toContain('No visits saved yet');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Add Visit');
-  });
-
-  it('renders saved visit rows when visits exist', async () => {
-    mockClosedEditor();
-    (useVisits as jest.Mock).mockReturnValue({
-      activeCount: 0,
       loadError: null,
       loadState: 'ready',
       reload: jest.fn(),
@@ -122,50 +103,24 @@ describe('VisitsScreen', () => {
       await Promise.resolve();
     });
 
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Upper body');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Completed');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('1 hr');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Edit Visit');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Delete Visit');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Month');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Year');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('04/03');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('18:10 - 19:25');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('1 hr 15 min');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Edit');
   });
 
-  it('renders the active visit summary card when one exists', async () => {
-    (useVisitForm as jest.Mock).mockReturnValue({
-      activeVisit: createVisit({
-        durationMinutes: null,
-        endedAt: null,
-        id: 'visit_active',
-        status: 'active',
-      }),
-      closeEditor: jest.fn(),
-      derivedDurationMinutes: null,
-      editingVisit: null,
-      editorMode: 'closed',
-      errors: [],
-      formValues: null,
-      hasPrimaryGym: true,
-      markVisitCancelled: jest.fn(),
-      primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
-      save: jest.fn(),
-      saveFeedback: null,
-      saveState: 'idle',
-      setFieldValue: jest.fn(),
-      startCreate: jest.fn(),
-      startEdit: jest.fn(),
+  it('renders the primary gym empty state when nothing can be added yet', async () => {
+    mockClosedEditor({
+      hasPrimaryGym: false,
+      primaryGym: null,
     });
     (useVisits as jest.Mock).mockReturnValue({
-      activeCount: 1,
       loadError: null,
       loadState: 'ready',
       reload: jest.fn(),
-      visits: [
-        createVisit({
-          durationMinutes: null,
-          endedAt: null,
-          id: 'visit_active',
-          status: 'active',
-        }),
-      ],
+      visits: [],
     });
 
     let renderer: ReactTestRenderer.ReactTestRenderer;
@@ -175,11 +130,69 @@ describe('VisitsScreen', () => {
       await Promise.resolve();
     });
 
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Current active visit');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Active');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('In progress');
-    expect(JSON.stringify(renderer!.toJSON())).toContain(
-      'restored from SQLite on app launch',
-    );
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Primary gym required');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Open Settings');
+  });
+
+  it('renders the quick edit sheet when the editor is open', async () => {
+    mockClosedEditor({
+      derivedDurationMinutes: 75,
+      editorMode: 'edit',
+      editingVisit: createVisit(),
+      saveFeedback: 'Visit updated.',
+      saveState: 'success',
+    });
+    (useVisits as jest.Mock).mockReturnValue({
+      loadError: null,
+      loadState: 'ready',
+      reload: jest.fn(),
+      visits: [createVisit()],
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<VisitsScreen />);
+      await Promise.resolve();
+    });
+
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Edit Visit');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Duration');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Manual');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Delete Visit');
+  });
+
+  it('reloads visits and context when the screen regains focus', async () => {
+    const reload = jest.fn();
+    const reloadContext = jest.fn();
+
+    (useIsFocused as jest.Mock)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+    mockClosedEditor({ reloadContext });
+    (useVisits as jest.Mock).mockReturnValue({
+      loadError: null,
+      loadState: 'ready',
+      reload,
+      visits: [createVisit()],
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<VisitsScreen />);
+      await Promise.resolve();
+    });
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(reloadContext).not.toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.update(<VisitsScreen />);
+      await Promise.resolve();
+    });
+
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(reloadContext).toHaveBeenCalledTimes(1);
   });
 });
