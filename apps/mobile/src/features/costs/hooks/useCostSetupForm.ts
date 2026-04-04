@@ -5,6 +5,7 @@ import type { FeeItemFormValues } from '../../../domain/forms';
 import type { ValidationIssue } from '../../../utils/validation';
 import { getSettings } from '../../../data/repositories';
 import { getPrimaryGym } from '../../gym/useCases/primaryGym';
+import { deactivateCostItem } from '../useCases/deactivateCostItem';
 import {
   buildCostSetupDraftState,
   createCustomCostSetupLine,
@@ -150,20 +151,51 @@ export function useCostSetupForm({
 
   return {
     addCustomLine: useCallback(() => {
+      const nextLine = createCustomCostSetupLine();
+
       setDraftState(currentDraftState => ({
         ...currentDraftState,
         customLines: [
           ...currentDraftState.customLines,
-          createCustomCostSetupLine(),
+          nextLine,
         ],
       }));
       setSaveFeedback(null);
       setSaveState('idle');
+      return nextLine.draftId;
     }, []),
     appSettings,
     customLines: draftState.customLines,
+    deactivateLine: async (lineId: string) => {
+      const line = [...draftState.starterLines, ...draftState.customLines].find(
+        currentLine => currentLine.draftId === lineId,
+      );
+
+      if (!line?.existingFeeItemId) {
+        return false;
+      }
+
+      await deactivateCostItem({ id: line.existingFeeItemId });
+      setSaveState('success');
+      setSaveFeedback(`${line.formValues.label.trim() || 'Cost line'} moved to inactive history.`);
+      onReload();
+
+      return true;
+    },
+    getStarterLineDraftId: useCallback((presetKey: CostSetupLineDraft['presetKey']) => {
+      return (
+        draftState.starterLines.find(line => line.presetKey === presetKey)?.draftId ??
+        null
+      );
+    }, [draftState.starterLines]),
     hasPrimaryGym: primaryGym !== null,
     primaryGym,
+    resetDraftState: useCallback(() => {
+      setDraftState(buildCostSetupDraftState(costItems));
+      setValidationErrorsByLine({});
+      setSaveFeedback(null);
+      setSaveState('idle');
+    }, [costItems]),
     reloadSupport: useCallback(() => {
       setSupportReloadToken(currentToken => currentToken + 1);
     }, []),
@@ -174,6 +206,9 @@ export function useCostSetupForm({
       setValidationErrorsByLine({});
       setSaveFeedback(`Restored ${feeItem.label} to the setup form. Save to reactivate it.`);
       setSaveState('idle');
+      return feeItem.category === 'other' || feeItem.category === 'pt'
+        ? `custom_${feeItem.id}`
+        : `starter_${feeItem.id}`;
     }, []),
     removeCustomLine: useCallback((lineId: string) => {
       setDraftState(currentDraftState => ({

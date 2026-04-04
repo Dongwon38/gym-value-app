@@ -12,6 +12,16 @@
   - `PRODUCT_SPEC_v0.1.md`
 - 목적: 현재 mobile 앱의 화면 밀도, 입력 흐름, 시각 계층, 정보 구조를 재정리하고, 구현 전에 필요한 결정과 권장 방향을 한 문서에 묶는다.
 
+## 현재 상태 메모
+- 2026-04-04 기준으로 아래 결정은 확정되었다.
+  - Costs는 list-first + add/edit bottom sheet 구조로 전환
+  - Visits 편집은 bottom sheet quick edit 방향 채택
+  - Settings debug/diagnostic copy는 기본 화면에서 숨기고 collapse 처리
+  - 전체 visual tone은 더 밝은 neutral white + soft green 방향으로 이동
+- 구현 진행 상태:
+  - `UIR-01` 착수
+  - `UIR-04` 1차 구현 진행 중
+
 ---
 
 ## 1. 왜 이 문서가 필요한가
@@ -277,6 +287,9 @@
 - Goal: overall visual hierarchy를 먼저 통일한다.
 - Scope: background/surface/border/text scale, header spacing, status pill, segmented, bottom sheet scaffold
 - Acceptance: 모든 screen이 같은 card rhythm과 section spacing을 쓴다.
+- 상태 메모:
+  - screen header trailing action과 bottom sheet scaffold는 1차 반영됨
+  - token/lightening, status pill, screen-wide spacing harmonization은 추가 작업 필요
 
 ### `UIR-02` Home information hierarchy refresh
 - Goal: Home을 KPI-first dashboard로 재구성한다.
@@ -292,6 +305,9 @@
 - Goal: Costs를 list + sheet 중심으로 바꾼다.
 - Scope: recurring summary, saved list, add/edit sheet, quick templates
 - Acceptance: 사용자가 비용 구조를 읽고 수정하기 쉬워진다.
+- 상태 메모:
+  - recurring summary card, active list, quick template sheet, edit sheet가 1차 반영됨
+  - inactive secondary treatment, iconography polish, final spacing/copy polish는 후속 보완 필요
 
 ### `UIR-05` Settings structural refresh
 - Goal: Settings를 setup dashboard처럼 정리한다.

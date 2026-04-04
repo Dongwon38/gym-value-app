@@ -1,3 +1,4 @@
+export { BottomSheet } from './BottomSheet';
 export { Card } from './Card';
 export { EmptyState } from './EmptyState';
 export { PrimaryButton } from './PrimaryButton';

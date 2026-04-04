@@ -72,10 +72,13 @@ describe('CostsScreen', () => {
         locale: 'en-CA',
       },
       customLines: [],
+      deactivateLine: jest.fn(),
+      getStarterLineDraftId: jest.fn(() => 'starter_membership'),
       hasPrimaryGym: true,
       primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
       reloadSupport: jest.fn(),
       removeCustomLine: jest.fn(),
+      resetDraftState: jest.fn(),
       restoreCostItem: jest.fn(),
       save: jest.fn(),
       saveFeedback: null,
@@ -131,13 +134,14 @@ describe('CostsScreen', () => {
       await Promise.resolve();
     });
 
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Costs');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Membership');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Add custom line');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Save');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Monthly recurring');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('No costs yet');
+    expect(JSON.stringify(renderer!.toJSON())).toContain(
+      'Start with one of the four quick templates, or add a custom line.',
+    );
   });
 
-  it('renders inactive history rows separately from the setup form', async () => {
+  it('renders active and inactive cost sections separately', async () => {
     mockCostSetupForm();
     (useCostItems as jest.Mock).mockReturnValue({
       activeCount: 1,
@@ -155,10 +159,10 @@ describe('CostsScreen', () => {
       await Promise.resolve();
     });
 
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Inactive cost history');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Monthly recurring');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Monthly membership');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('$59.99');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Restore to setup');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Inactive costs');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Show inactive (1)');
   });
 
   it('renders the load error surface when the cost query fails', async () => {
@@ -199,10 +203,13 @@ describe('CostsScreen', () => {
         locale: 'en-CA',
       },
       customLines: [],
+      deactivateLine: jest.fn(),
+      getStarterLineDraftId: jest.fn(() => 'starter_membership'),
       hasPrimaryGym: true,
       primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
       reloadSupport,
       removeCustomLine: jest.fn(),
+      resetDraftState: jest.fn(),
       restoreCostItem: jest.fn(),
       save: jest.fn(),
       saveFeedback: null,

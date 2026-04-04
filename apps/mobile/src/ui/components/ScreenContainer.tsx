@@ -8,27 +8,36 @@ type ScreenContainerProps = PropsWithChildren<{
   eyebrow: string;
   title: string;
   description?: string;
+  headerAction?: React.ReactNode;
   scroll?: boolean;
+  showEyebrow?: boolean;
 }>;
 
 export function ScreenContainer({
   eyebrow,
   title,
   description,
+  headerAction,
   children,
   scroll = false,
+  showEyebrow = true,
 }: ScreenContainerProps) {
   const theme = useAppTheme();
   const content = (
     <>
-      <Text style={[styles.eyebrow, { color: theme.colors.textMuted }]}>
-        {eyebrow}
-      </Text>
-      <Text
-        accessibilityRole="header"
-        style={[styles.title, { color: theme.colors.textPrimary }]}>
-        {title}
-      </Text>
+      {showEyebrow ? (
+        <Text style={[styles.eyebrow, { color: theme.colors.textMuted }]}>
+          {eyebrow}
+        </Text>
+      ) : null}
+      <View style={styles.titleRow}>
+        <Text
+          accessibilityRole="header"
+          style={[styles.title, { color: theme.colors.textPrimary }]}>
+          {title}
+        </Text>
+        {headerAction ? <View style={styles.headerAction}>{headerAction}</View> : null}
+      </View>
       {description ? (
         <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
           {description}
@@ -88,7 +97,16 @@ const styles = StyleSheet.create({
   },
   title: {
     ...appTheme.typography.title,
+  },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
     marginTop: 8,
+  },
+  headerAction: {
+    alignItems: 'flex-end',
   },
   description: {
     ...appTheme.typography.body,
