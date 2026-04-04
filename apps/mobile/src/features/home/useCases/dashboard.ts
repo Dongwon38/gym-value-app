@@ -9,6 +9,7 @@ import type {
   DashboardRangeType,
   DashboardStats,
   Gym,
+  Visit,
 } from '../../../domain/models';
 import {
   getPrimaryGym,
@@ -19,11 +20,24 @@ import {
 
 export interface HomeDashboardSnapshot {
   activeFeeItemCount: number;
+  activeVisit: Visit | null;
+  currentMonthVisitCount: number;
   dashboardStats: DashboardStats;
   primaryGym: Gym | null;
   range: DashboardDateRange;
   settings: AppSettings;
   totalSavedVisits: number;
+}
+
+function getCurrentMonthVisitCount(visits: Visit[], now: Date) {
+  return visits.filter(visit => {
+    const startedAt = new Date(visit.startedAt);
+
+    return (
+      startedAt.getFullYear() === now.getFullYear() &&
+      startedAt.getMonth() === now.getMonth()
+    );
+  }).length;
 }
 
 function createFallbackAppSettings(): AppSettings {
@@ -54,9 +68,12 @@ export async function getHomeDashboardSnapshot(
   ]);
   const resolvedSettings = settings ?? createFallbackAppSettings();
   const range = resolveDashboardRange(rangeType, feeItems, visits, now);
+  const activeVisit = visits.find(visit => visit.status === 'active') ?? null;
 
   return {
     activeFeeItemCount: feeItems.filter(feeItem => feeItem.isActive).length,
+    activeVisit,
+    currentMonthVisitCount: getCurrentMonthVisitCount(visits, now),
     dashboardStats: buildDashboardStats({
       appSettings: resolvedSettings,
       feeItems,

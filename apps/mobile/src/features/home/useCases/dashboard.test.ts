@@ -79,6 +79,7 @@ describe('getHomeDashboardSnapshot', () => {
 
     expect(snapshot.primaryGym?.id).toBe('gym_1');
     expect(snapshot.activeFeeItemCount).toBe(1);
+    expect(snapshot.currentMonthVisitCount).toBe(0);
     expect(snapshot.dashboardStats.totalVisits).toBe(1);
     expect(snapshot.dashboardStats.totalPaid).toBe(630);
     expect(snapshot.range.rangeType).toBe('current_year');
@@ -101,6 +102,7 @@ describe('getHomeDashboardSnapshot', () => {
       defaultPstRate: 0.07,
       locale: 'en-CA',
     });
+    expect(snapshot.activeVisit).toBeNull();
     expect(snapshot.dashboardStats.totalPaid).toBeNull();
   });
 });

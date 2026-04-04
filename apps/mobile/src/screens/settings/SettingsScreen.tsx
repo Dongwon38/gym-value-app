@@ -8,13 +8,13 @@ import { ScreenContainer } from '../../ui/components';
 export function SettingsScreen() {
   return (
     <ScreenContainer
-      description="Defaults, gym setup, and fallback."
       eyebrow="Settings"
       scroll
+      showEyebrow={false}
       title="Settings">
-      <AppSettingsSection />
       <GymSetupSection />
       <AssistedCheckInSection />
+      <AppSettingsSection />
     </ScreenContainer>
   );
 }

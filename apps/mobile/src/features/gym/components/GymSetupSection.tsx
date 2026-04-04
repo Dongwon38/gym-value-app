@@ -1,16 +1,32 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card, PrimaryButton, TextField } from '../../../ui/components';
+import { BottomSheet, Card, PrimaryButton, TextField } from '../../../ui/components';
 import { useAppTheme } from '../../../ui/theme';
 import { useGymSetupForm } from '../hooks/useGymSetupForm';
+import { SettingsRow } from '../../settings/components/SettingsRow';
+
+function findFieldMessage(
+  issues: Array<{ field: string; message: string }>,
+  field: string,
+) {
+  return issues.find(issue => issue.field === field)?.message;
+}
+
+function formatCoordinateLabel(latitude?: number, longitude?: number) {
+  if (latitude === undefined || longitude === undefined) {
+    return 'Not set';
+  }
+
+  return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+}
 
 export function GymSetupSection() {
   const theme = useAppTheme();
+  const [editorVisible, setEditorVisible] = React.useState(false);
   const {
     errors,
     formValues,
-    hasReviewed,
     loadError,
     loadState,
     mode,
@@ -23,14 +39,48 @@ export function GymSetupSection() {
     warnings,
   } = useGymSetupForm();
 
+  async function handleSave() {
+    const savedGym = await save();
+
+    if (savedGym) {
+      setEditorVisible(false);
+    }
+  }
+
+  const footer = (
+    <View style={styles.footerRow}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          setEditorVisible(false);
+        }}
+        style={({ pressed }) => [
+          styles.secondaryButton,
+          {
+            backgroundColor: theme.colors.surfaceMuted,
+            borderColor: theme.colors.border,
+            borderRadius: theme.radius.pill,
+            opacity: pressed ? 0.76 : 1,
+          },
+        ]}>
+        <Text style={[styles.secondaryButtonLabel, { color: theme.colors.textSecondary }]}>
+          Cancel
+        </Text>
+      </Pressable>
+      <PrimaryButton
+        disabled={saveState === 'saving'}
+        label={saveState === 'saving' ? 'Saving...' : mode === 'edit' ? 'Save Gym' : 'Create Gym'}
+        onPress={handleSave}
+        style={styles.primaryFooterButton}
+      />
+    </View>
+  );
+
   if (loadState === 'loading') {
     return (
-      <Card
-        subtitle="The app is checking whether an active primary gym already exists."
-        title="Gym setup is loading">
+      <Card title="Gym">
         <Text style={[styles.copy, { color: theme.colors.textSecondary }]}>
-          As soon as the query finishes, this shell will switch into create or
-          edit mode.
+          Loading primary gym details.
         </Text>
       </Card>
     );
@@ -38,14 +88,12 @@ export function GymSetupSection() {
 
   if (loadState === 'error') {
     return (
-      <Card
-        subtitle="This blocks the setup shell because the screen cannot determine whether to create a new gym or edit the current primary gym."
-        title="Couldn't load the primary gym">
+      <Card title="Gym">
         <Text style={[styles.copy, { color: theme.colors.danger }]}>
           {loadError}
         </Text>
         <PrimaryButton
-          label="Retry Gym Query"
+          label="Retry"
           onPress={reload}
           style={{ marginTop: theme.spacing.lg }}
         />
@@ -55,140 +103,40 @@ export function GymSetupSection() {
 
   return (
     <>
-      <Card
-        subtitle={
-          mode === 'edit'
-            ? 'The form below is prefilled from the current active primary gym row.'
-            : 'No primary gym is saved yet. Fill this shell so GYM-02 can wire persistence on top.'
-        }
-        title={
-          mode === 'edit' ? 'Edit your primary gym' : 'Create your primary gym'
-        }>
-        <Text style={[styles.copy, { color: theme.colors.textSecondary }]}>
-          {mode === 'edit'
-            ? `${primaryGym?.name} is currently marked as the active primary gym.`
-            : 'Manual coordinates are the v0.1 setup path. Location-assisted entry comes later.'}
-        </Text>
-      </Card>
-
-      <Card
-        subtitle="This shell uses the shared form types and validation utilities from DOM-02."
-        title="Gym setup form">
-        <View style={styles.form}>
-          <TextField
-            autoCapitalize="words"
-            errorMessage={findFieldMessage(errors, 'name')}
-            label="Gym Name"
-            onChangeText={value => {
-              setFieldValue('name', value);
-            }}
-            placeholder="Downtown Fitness Club"
-            value={formValues.name}
+      <Card title="Gym">
+        <View>
+          <SettingsRow label="Name" value={primaryGym?.name ?? 'Not set'} />
+          <SettingsRow
+            label="Location"
+            value={formatCoordinateLabel(primaryGym?.latitude, primaryGym?.longitude)}
           />
-          <TextField
-            autoCapitalize="none"
-            errorMessage={findFieldMessage(errors, 'latitude')}
-            helperText="Use decimal coordinates for the gym center."
-            keyboardType="decimal-pad"
-            label="Latitude"
-            onChangeText={value => {
-              setFieldValue('latitude', value);
-            }}
-            placeholder="49.2827"
-            value={formValues.latitude}
+          <SettingsRow
+            label="Radius"
+            value={primaryGym ? `${primaryGym.radiusMeters}m` : 'Not set'}
           />
-          <TextField
-            autoCapitalize="none"
-            errorMessage={findFieldMessage(errors, 'longitude')}
-            keyboardType="decimal-pad"
-            label="Longitude"
-            onChangeText={value => {
-              setFieldValue('longitude', value);
-            }}
-            placeholder="-123.1207"
-            value={formValues.longitude}
-          />
-          <TextField
-            autoCapitalize="none"
-            errorMessage={findFieldMessage(errors, 'radiusMeters')}
-            helperText="Allowed range for v0.1 is 30m to 500m."
-            keyboardType="number-pad"
-            label="Radius (meters)"
-            onChangeText={value => {
-              setFieldValue('radiusMeters', value);
-            }}
-            placeholder="150"
-            value={formValues.radiusMeters}
-          />
-          <TextField
-            autoCapitalize="none"
-            errorMessage={findFieldMessage(errors, 'timezone')}
-            helperText="Use an IANA timezone like America/Vancouver."
+          <SettingsRow
             label="Timezone"
-            onChangeText={value => {
-              setFieldValue('timezone', value);
-            }}
-            placeholder="America/Vancouver"
-            value={formValues.timezone}
+            last
+            value={primaryGym?.timezone ?? 'Not set'}
           />
         </View>
 
-        <PrimaryButton
-          disabled={saveState === 'saving'}
-          label={
-            saveState === 'saving'
-              ? 'Saving Gym...'
-              : mode === 'edit'
-                ? 'Save Gym Changes'
-                : 'Create Primary Gym'
-          }
-          onPress={() => {
-            save();
-          }}
-          style={{ marginTop: theme.spacing.xl }}
-        />
-        <Text style={[styles.meta, { color: theme.colors.textMuted }]}>
-          Saving keeps the current gym as the only active primary row.
-        </Text>
-      </Card>
+        <View style={styles.sectionFooter}>
+          <Text style={[styles.meta, { color: theme.colors.textMuted }]}>
+            Manual coordinates only for now
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setEditorVisible(true);
+            }}
+            style={({ pressed }) => [{ opacity: pressed ? 0.76 : 1 }]}>
+            <Text style={[styles.inlineAction, { color: theme.colors.accent }]}>
+              {mode === 'edit' ? 'Edit Gym' : 'Set Up Gym'}
+            </Text>
+          </Pressable>
+        </View>
 
-      <Card
-        subtitle="Validation blocks save. Warnings stay visible but do not prevent create/update."
-        title="Save preview and feedback">
-        {!hasReviewed ? (
-          <Text style={[styles.copy, { color: theme.colors.textSecondary }]}>
-            Save the form to surface validation results and persistence feedback.
-          </Text>
-        ) : null}
-        {hasReviewed && errors.length === 0 && warnings.length === 0 ? (
-          <Text style={[styles.copy, { color: theme.colors.accent }]}>
-            This draft passes validation and is ready for GYM-02 save wiring.
-          </Text>
-        ) : null}
-        {hasReviewed && (errors.length > 0 || warnings.length > 0) ? (
-          <View style={styles.issueList}>
-            {errors.map(issue => (
-              <Text
-                key={issue.code}
-                style={[styles.issue, { color: theme.colors.danger }]}>
-                {`\u2022 ${issue.message}`}
-              </Text>
-            ))}
-            {warnings.map(issue => (
-              <Text
-                key={issue.code}
-                style={[styles.issue, { color: theme.colors.warning }]}>
-                {`\u2022 ${issue.message}`}
-              </Text>
-            ))}
-            {errors.length === 0 ? (
-              <Text style={[styles.copy, { color: theme.colors.accent }]}>
-                This draft passes blocking validation. Review the warning before
-                save wiring lands in GYM-02.
-              </Text>
-            ) : null}
-          </View>
-        ) : null}
         {saveFeedback ? (
           <Text
             style={[
@@ -204,40 +152,182 @@ export function GymSetupSection() {
           </Text>
         ) : null}
       </Card>
+
+      <BottomSheet
+        footer={footer}
+        onClose={() => {
+          setEditorVisible(false);
+        }}
+        subtitle="Manual coordinates, radius, and timezone"
+        title={mode === 'edit' ? 'Edit Gym' : 'Set Up Gym'}
+        visible={editorVisible}>
+        <TextField
+          autoCapitalize="words"
+          errorMessage={findFieldMessage(errors, 'name')}
+          label="Name"
+          onChangeText={value => {
+            setFieldValue('name', value);
+          }}
+          placeholder="Downtown Fitness Club"
+          value={formValues.name}
+        />
+        <View style={styles.inlineFields}>
+          <View style={styles.inlineField}>
+            <TextField
+              autoCapitalize="none"
+              errorMessage={findFieldMessage(errors, 'latitude')}
+              keyboardType="decimal-pad"
+              label="Latitude"
+              onChangeText={value => {
+                setFieldValue('latitude', value);
+              }}
+              placeholder="49.2827"
+              value={formValues.latitude}
+            />
+          </View>
+          <View style={styles.inlineField}>
+            <TextField
+              autoCapitalize="none"
+              errorMessage={findFieldMessage(errors, 'longitude')}
+              keyboardType="decimal-pad"
+              label="Longitude"
+              onChangeText={value => {
+                setFieldValue('longitude', value);
+              }}
+              placeholder="-123.1207"
+              value={formValues.longitude}
+            />
+          </View>
+        </View>
+        <View style={styles.inlineFields}>
+          <View style={styles.inlineField}>
+            <TextField
+              autoCapitalize="none"
+              errorMessage={findFieldMessage(errors, 'radiusMeters')}
+              keyboardType="number-pad"
+              label="Radius"
+              onChangeText={value => {
+                setFieldValue('radiusMeters', value);
+              }}
+              placeholder="150"
+              value={formValues.radiusMeters}
+            />
+          </View>
+          <View style={styles.inlineField}>
+            <TextField
+              autoCapitalize="none"
+              errorMessage={findFieldMessage(errors, 'timezone')}
+              label="Timezone"
+              onChangeText={value => {
+                setFieldValue('timezone', value);
+              }}
+              placeholder="America/Vancouver"
+              value={formValues.timezone}
+            />
+          </View>
+        </View>
+
+        {warnings.length > 0 ? (
+          <View
+            style={[
+              styles.warningBox,
+              {
+                borderColor: theme.colors.border,
+                borderRadius: theme.radius.md,
+              },
+              styles.warningBoxFill,
+            ]}>
+            {warnings.map(issue => (
+              <Text
+                key={issue.code}
+                style={[styles.warning, { color: theme.colors.warning }]}>
+                {issue.message}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
+        {saveFeedback ? (
+          <Text
+            style={[
+              styles.feedback,
+              {
+                color:
+                  saveState === 'error'
+                    ? theme.colors.danger
+                    : theme.colors.accent,
+              },
+            ]}>
+            {saveFeedback}
+          </Text>
+        ) : null}
+      </BottomSheet>
     </>
   );
-}
-
-function findFieldMessage(
-  issues: Array<{ field: string; message: string }>,
-  field: string,
-) {
-  return issues.find(issue => issue.field === field)?.message;
 }
 
 const styles = StyleSheet.create({
   copy: {
     fontSize: 15,
-    lineHeight: 22,
-  },
-  form: {
-    gap: 16,
+    lineHeight: 20,
   },
   feedback: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 16,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 12,
   },
-  issue: {
-    fontSize: 14,
-    lineHeight: 20,
+  footerRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  issueList: {
+  inlineAction: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  inlineField: {
+    flex: 1,
+  },
+  inlineFields: {
+    flexDirection: 'row',
     gap: 12,
   },
   meta: {
     fontSize: 13,
     lineHeight: 18,
-    marginTop: 12,
+  },
+  primaryFooterButton: {
+    flex: 1,
+  },
+  secondaryButton: {
+    alignItems: 'center',
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 18,
+  },
+  secondaryButtonLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  sectionFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  warning: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  warningBox: {
+    borderWidth: 1,
+    gap: 8,
+    padding: 14,
+  },
+  warningBoxFill: {
+    backgroundColor: '#F3E6CF',
   },
 });

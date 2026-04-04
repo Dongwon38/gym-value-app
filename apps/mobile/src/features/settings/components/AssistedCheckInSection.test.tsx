@@ -36,13 +36,11 @@ describe('AssistedCheckInSection', () => {
       await Promise.resolve();
     });
 
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Manual-only mode is active');
-    expect(JSON.stringify(renderer!.toJSON())).toContain(
-      'You can keep using manual gym setup, cost tracking, and visit CRUD',
-    );
-    expect(JSON.stringify(renderer!.toJSON())).toContain(
-      'Refresh Assisted Tracking',
-    );
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Assisted check-in');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Permissions');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Manual only');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Refresh');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Show Diagnostics');
   });
 
   it('renders the tracking state details when assisted suggestions are enabled', async () => {
@@ -69,11 +67,10 @@ describe('AssistedCheckInSection', () => {
     });
 
     expect(JSON.stringify(renderer!.toJSON())).toContain(
-      'Assisted suggestions are tracking',
+      'Assisted check-in',
     );
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Restored active visit:');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('visit_1');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Last prompt:');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('prompt_1');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Tracking');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Connected');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Allowed');
   });
 });

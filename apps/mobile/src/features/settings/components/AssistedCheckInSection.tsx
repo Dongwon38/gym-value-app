@@ -1,148 +1,250 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAssistedCheckIn } from '../../../app/providers/AssistedCheckInContext';
 import { Card, PrimaryButton } from '../../../ui/components';
 import { useAppTheme } from '../../../ui/theme';
+import { SettingsRow } from './SettingsRow';
+import { StatusPill } from './StatusPill';
 
 function formatPermissionStatusLabel(status: string | null) {
   if (status === 'granted') {
-    return 'granted';
+    return 'Allowed';
   }
 
   if (status === 'denied') {
-    return 'denied';
+    return 'Denied';
   }
 
   if (status === 'blocked') {
-    return 'blocked';
+    return 'Blocked';
   }
 
-  return 'unavailable';
+  return 'Unavailable';
 }
 
-function getStatusTitle(status: ReturnType<typeof useAssistedCheckIn>['snapshot']['status']) {
+function getPermissionTone(status: string | null) {
+  if (status === 'granted') {
+    return 'success' as const;
+  }
+
+  if (status === 'blocked') {
+    return 'danger' as const;
+  }
+
+  if (status === 'denied') {
+    return 'warning' as const;
+  }
+
+  return 'neutral' as const;
+}
+
+function getTrackingStatusLabel(status: ReturnType<typeof useAssistedCheckIn>['snapshot']['status']) {
   if (status === 'tracking') {
-    return 'Assisted suggestions are tracking';
+    return 'Tracking';
   }
 
   if (status === 'syncing') {
-    return 'Assisted tracking is refreshing';
+    return 'Refreshing';
   }
 
   if (status === 'error') {
-    return 'Assisted tracking needs attention';
+    return 'Needs review';
   }
 
   if (status === 'manual_only') {
-    return 'Manual-only mode is active';
+    return 'Manual only';
   }
 
-  return 'Assisted tracking is idle';
+  return 'Idle';
+}
+
+function getTrackingTone(status: ReturnType<typeof useAssistedCheckIn>['snapshot']['status']) {
+  if (status === 'tracking') {
+    return 'success' as const;
+  }
+
+  if (status === 'syncing') {
+    return 'accent' as const;
+  }
+
+  if (status === 'error') {
+    return 'danger' as const;
+  }
+
+  if (status === 'manual_only') {
+    return 'warning' as const;
+  }
+
+  return 'neutral' as const;
 }
 
 function getStatusBody(snapshot: ReturnType<typeof useAssistedCheckIn>['snapshot']) {
   if (snapshot.status === 'tracking') {
-    return 'Your primary gym geofence is synced. Enter and exit events still create suggestions first, and visits only start or end after you accept the action.';
+    return 'Your primary gym is synced for assisted suggestions.';
   }
 
   if (snapshot.status === 'syncing') {
-    return 'The app is checking permissions, syncing the primary gym geofence, and restoring any active visit context.';
+    return 'Permissions and geofence state are refreshing now.';
   }
 
   if (snapshot.status === 'error') {
-    return 'The assisted flow hit an error. You can still add or finish visits manually from the Visits tab while you review permissions and radius settings.';
+    return 'Assisted suggestions hit an error. Manual visits still work.';
   }
 
-  return 'This app remains useful without automation. You can keep using manual gym setup, cost tracking, and visit CRUD even when location or notification permissions are unavailable.';
+  if (snapshot.status === 'manual_only') {
+    return 'Manual tracking is active until permissions and delivery are available.';
+  }
+
+  return 'Assisted suggestions are idle until the next refresh.';
 }
 
 export function AssistedCheckInSection() {
   const theme = useAppTheme();
+  const [showDiagnostics, setShowDiagnostics] = React.useState(false);
   const { refresh, snapshot } = useAssistedCheckIn();
 
   return (
-    <Card
-      subtitle="Assisted check-in is always optional. Manual visit entry remains the fallback if permissions, prompts, or device delivery fail."
-      title={getStatusTitle(snapshot.status)}>
-      <Text style={[styles.copy, { color: theme.colors.textSecondary }]}>
-        {getStatusBody(snapshot)}
-      </Text>
+    <>
+      <Card title="Permissions">
+        <View>
+          <SettingsRow
+            label="Location"
+            trailing={
+              <StatusPill
+                label={formatPermissionStatusLabel(snapshot.locationPermission)}
+                tone={getPermissionTone(snapshot.locationPermission)}
+              />
+            }
+          />
+          <SettingsRow
+            label="Background"
+            trailing={
+              <StatusPill
+                label={formatPermissionStatusLabel(snapshot.backgroundLocationPermission)}
+                tone={getPermissionTone(snapshot.backgroundLocationPermission)}
+              />
+            }
+          />
+          <SettingsRow
+            label="Notifications"
+            last
+            trailing={
+              <StatusPill
+                label={formatPermissionStatusLabel(snapshot.notificationPermission)}
+                tone={getPermissionTone(snapshot.notificationPermission)}
+              />
+            }
+          />
+        </View>
+      </Card>
 
-      <View style={[styles.metaList, { marginTop: theme.spacing.lg }]}>
-        <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-          Primary gym sync: {snapshot.primaryGymId ?? 'none'}
+      <Card title="Assisted check-in">
+        <Text style={[styles.copy, { color: theme.colors.textSecondary }]}>
+          {getStatusBody(snapshot)}
         </Text>
-        <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-          Location permission:{' '}
-          {formatPermissionStatusLabel(snapshot.locationPermission)}
-        </Text>
-        <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-          Background location:{' '}
-          {formatPermissionStatusLabel(snapshot.backgroundLocationPermission)}
-        </Text>
-        <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-          Notification permission:{' '}
-          {formatPermissionStatusLabel(snapshot.notificationPermission)}
-        </Text>
-        <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-          Tracking enabled: {snapshot.trackingEnabled ? 'yes' : 'no'}
-        </Text>
-        {snapshot.activeVisitId ? (
-          <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-            Restored active visit: {snapshot.activeVisitId}
+
+        <View style={{ marginTop: theme.spacing.md }}>
+          <SettingsRow
+            label="Status"
+            trailing={
+              <StatusPill
+                label={getTrackingStatusLabel(snapshot.status)}
+                tone={getTrackingTone(snapshot.status)}
+              />
+            }
+          />
+          <SettingsRow
+            label="Primary gym sync"
+            value={snapshot.primaryGymId ? 'Connected' : 'Not set'}
+          />
+          <SettingsRow
+            label="Tracking"
+            last
+            value={snapshot.trackingEnabled ? 'Enabled' : 'Manual only'}
+          />
+        </View>
+
+        {snapshot.lastError ? (
+          <Text style={[styles.warning, { color: theme.colors.warning }]}>
+            {snapshot.lastError}
           </Text>
         ) : null}
-        {snapshot.lastPromptId ? (
-          <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
-            Last prompt: {snapshot.lastPromptId}
-          </Text>
+
+        <View style={styles.actionRow}>
+          <PrimaryButton
+            label="Refresh"
+            onPress={() => {
+              refresh().catch(() => {});
+            }}
+          />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setShowDiagnostics(currentValue => !currentValue);
+            }}
+            style={({ pressed }) => [{ opacity: pressed ? 0.76 : 1 }]}>
+            <Text style={[styles.inlineAction, { color: theme.colors.accent }]}>
+              {showDiagnostics ? 'Hide Diagnostics' : 'Show Diagnostics'}
+            </Text>
+          </Pressable>
+        </View>
+
+        {showDiagnostics ? (
+          <View
+            style={[
+              styles.diagnostics,
+              {
+                backgroundColor: theme.colors.background,
+                borderColor: theme.colors.border,
+                borderRadius: theme.radius.md,
+              },
+            ]}>
+            <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
+              Primary gym ID: {snapshot.primaryGymId ?? 'none'}
+            </Text>
+            <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
+              Active visit ID: {snapshot.activeVisitId ?? 'none'}
+            </Text>
+            <Text style={[styles.meta, { color: theme.colors.textSecondary }]}>
+              Last prompt ID: {snapshot.lastPromptId ?? 'none'}
+            </Text>
+          </View>
         ) : null}
-      </View>
-
-      {snapshot.lastError ? (
-        <Text style={[styles.warning, { color: theme.colors.warning }]}>
-          {snapshot.lastError}
-        </Text>
-      ) : null}
-
-      {!snapshot.trackingEnabled ? (
-        <Text style={[styles.manualOnly, { color: theme.colors.textPrimary }]}>
-          If suggestions are unavailable, go to Visits to create, complete, or cancel sessions manually. If prompts feel off later, adjust your gym radius in Settings.
-        </Text>
-      ) : null}
-
-      <PrimaryButton
-        label="Refresh Assisted Tracking"
-        onPress={() => {
-          refresh().catch(() => {});
-        }}
-        style={{ marginTop: theme.spacing.xl }}
-      />
-    </Card>
+      </Card>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  copy: {
-    fontSize: 15,
-    lineHeight: 22,
+  actionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
   },
-  manualOnly: {
+  copy: {
     fontSize: 14,
     lineHeight: 20,
-    marginTop: 12,
+  },
+  diagnostics: {
+    borderWidth: 1,
+    gap: 8,
+    marginTop: 16,
+    padding: 14,
+  },
+  inlineAction: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 18,
   },
   meta: {
     fontSize: 13,
     lineHeight: 18,
   },
-  metaList: {
-    gap: 6,
-  },
   warning: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     marginTop: 12,
   },
 });

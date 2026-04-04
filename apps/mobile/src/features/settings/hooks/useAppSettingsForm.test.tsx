@@ -1,6 +1,8 @@
 jest.mock('../useCases/appSettings', () => ({
   getAppSettings: jest.fn(),
   mapAppSettingsToFormValues: (settings: {
+    checkinSuggestionsEnabled: boolean;
+    checkoutSuggestionsEnabled: boolean;
     currency: string;
     defaultGstRate: number;
     defaultPstRate: number;
@@ -8,12 +10,16 @@ jest.mock('../useCases/appSettings', () => ({
   } | null) =>
     settings
       ? {
+          checkinSuggestionsEnabled: settings.checkinSuggestionsEnabled,
+          checkoutSuggestionsEnabled: settings.checkoutSuggestionsEnabled,
           currency: settings.currency,
           defaultGstRate: String(settings.defaultGstRate),
           defaultPstRate: String(settings.defaultPstRate),
           locale: settings.locale,
         }
       : {
+          checkinSuggestionsEnabled: true,
+          checkoutSuggestionsEnabled: true,
           currency: 'CAD',
           defaultGstRate: '0.05',
           defaultPstRate: '0.07',
@@ -128,6 +134,8 @@ describe('useAppSettingsForm', () => {
 
     expect(latestHookState?.loadState).toBe('ready');
     expect(latestHookState?.formValues).toEqual({
+      checkinSuggestionsEnabled: true,
+      checkoutSuggestionsEnabled: true,
       currency: 'CAD',
       defaultGstRate: '0.05',
       defaultPstRate: '0.07',
@@ -150,7 +158,7 @@ describe('useAppSettingsForm', () => {
       updatedAt: '2026-04-02T10:00:00.000Z',
     });
     (saveAppSettings as jest.Mock).mockResolvedValue({
-      checkinSuggestionsEnabled: true,
+      checkinSuggestionsEnabled: false,
       checkoutSuggestionsEnabled: true,
       createdAt: '2026-04-02T10:00:00.000Z',
       currency: 'USD',
@@ -173,6 +181,7 @@ describe('useAppSettingsForm', () => {
       latestHookState?.setFieldValue('locale', 'en-US');
       latestHookState?.setFieldValue('defaultGstRate', '0');
       latestHookState?.setFieldValue('defaultPstRate', '0.08');
+      latestHookState?.setFieldValue('checkinSuggestionsEnabled', false);
       await latestHookState?.save();
       await flushEffects();
     });
@@ -181,6 +190,8 @@ describe('useAppSettingsForm', () => {
     expect(latestHookState?.saveState).toBe('success');
     expect(latestHookState?.saveFeedback).toBe('Settings updated.');
     expect(latestHookState?.formValues).toEqual({
+      checkinSuggestionsEnabled: false,
+      checkoutSuggestionsEnabled: true,
       currency: 'USD',
       defaultGstRate: '0',
       defaultPstRate: '0.08',

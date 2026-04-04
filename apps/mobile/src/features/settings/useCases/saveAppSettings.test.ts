@@ -24,6 +24,8 @@ describe('saveAppSettings', () => {
 
     await saveAppSettings(
       {
+        checkinSuggestionsEnabled: false,
+        checkoutSuggestionsEnabled: true,
         currency: 'USD',
         defaultGstRate: '0',
         defaultPstRate: '0.08',
@@ -33,7 +35,7 @@ describe('saveAppSettings', () => {
     );
 
     expect(upsertSettings).toHaveBeenCalledWith({
-      checkinSuggestionsEnabled: true,
+      checkinSuggestionsEnabled: false,
       checkoutSuggestionsEnabled: true,
       currency: 'USD',
       defaultGstRate: 0,
@@ -49,6 +51,8 @@ describe('saveAppSettings', () => {
     await expect(
       saveAppSettings(
         {
+          checkinSuggestionsEnabled: true,
+          checkoutSuggestionsEnabled: true,
           currency: '',
           defaultGstRate: '',
           defaultPstRate: '0.07',

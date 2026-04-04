@@ -72,12 +72,8 @@ export async function saveAppSettings(
   }
 
   return upsertSettings({
-    checkinSuggestionsEnabled:
-      currentSettings?.checkinSuggestionsEnabled ??
-      defaultAppSettingsValues.checkinSuggestionsEnabled,
-    checkoutSuggestionsEnabled:
-      currentSettings?.checkoutSuggestionsEnabled ??
-      defaultAppSettingsValues.checkoutSuggestionsEnabled,
+    checkinSuggestionsEnabled: values.checkinSuggestionsEnabled,
+    checkoutSuggestionsEnabled: values.checkoutSuggestionsEnabled,
     currency: values.currency.trim(),
     defaultGstRate,
     defaultPstRate,

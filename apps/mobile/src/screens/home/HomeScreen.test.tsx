@@ -31,22 +31,24 @@ function createSnapshot(
 ) {
   return {
     activeFeeItemCount: 1,
+    activeVisit: null,
+    currentMonthVisitCount: 2,
     dashboardStats: {
       activeVisitId: undefined,
-      averageVisitLengthMinutes: 80,
+      averageVisitLengthMinutes: 77,
       costPerActiveDay: 35.7,
-      costPerHour: 13.3875,
-      costPerVisit: 17.85,
+      costPerHour: 23.73,
+      costPerVisit: 30.5,
       hasActiveVisit: false,
-      latestVisitAt: '2026-04-02T18:00:00.000Z',
+      latestVisitAt: '2026-04-03T18:00:00-07:00',
       rangeType: 'current_year',
-      totalDurationHours: 53.3333,
-      totalDurationMinutes: 3200,
-      totalPaid: 714,
-      totalVisits: 40,
-      uniqueVisitDays: 20,
+      totalDurationHours: 25.7,
+      totalDurationMinutes: 1542,
+      totalPaid: 610,
+      totalVisits: 20,
+      uniqueVisitDays: 12,
     },
-    primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
+    primaryGym: { id: 'gym_1', name: 'GoodLife Fitness' },
     range: {
       endDate: '2026-12-31',
       rangeType: 'current_year',
@@ -56,7 +58,7 @@ function createSnapshot(
       currency: 'CAD',
       locale: 'en-CA',
     },
-    totalSavedVisits: 40,
+    totalSavedVisits: 20,
     ...overrides,
   };
 }
@@ -85,7 +87,73 @@ describe('HomeScreen', () => {
     expect(JSON.stringify(renderer!.toJSON())).toContain('Open Settings');
   });
 
-  it('renders the cost empty state when no active cost item exists', async () => {
+  it('renders the refreshed dashboard layout when data is available', async () => {
+    (useHomeDashboard as jest.Mock).mockReturnValue({
+      loadError: null,
+      loadState: 'ready',
+      reload: jest.fn(),
+      snapshot: createSnapshot(),
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Gym Value');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Your gym value');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('$30.50');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Visits YTD');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Total hours');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Total spent');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('This month');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Avg duration');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Recent visit');
+  });
+
+  it('renders the active visit card when an active visit exists', async () => {
+    (useHomeDashboard as jest.Mock).mockReturnValue({
+      loadError: null,
+      loadState: 'ready',
+      reload: jest.fn(),
+      snapshot: createSnapshot({
+        activeVisit: {
+          id: 'visit_1',
+          startedAt: '2026-04-04T08:00:00-07:00',
+        },
+        dashboardStats: {
+          activeVisitId: 'visit_1',
+          averageVisitLengthMinutes: 77,
+          costPerActiveDay: 35.7,
+          costPerHour: 23.73,
+          costPerVisit: 30.5,
+          hasActiveVisit: true,
+          latestVisitAt: '2026-04-03T18:00:00-07:00',
+          rangeType: 'current_year',
+          totalDurationHours: 25.7,
+          totalDurationMinutes: 1542,
+          totalPaid: 610,
+          totalVisits: 20,
+          uniqueVisitDays: 12,
+        },
+      }),
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Active Visit');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('GoodLife Fitness');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Open Visits');
+  });
+
+  it('renders the cost CTA when no active cost item exists', async () => {
     (useHomeDashboard as jest.Mock).mockReturnValue({
       loadError: null,
       loadState: 'ready',
@@ -117,66 +185,9 @@ describe('HomeScreen', () => {
       await Promise.resolve();
     });
 
-    expect(JSON.stringify(renderer!.toJSON())).toContain('No active cost items yet');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Go to Costs');
-  });
-
-  it('renders the visit empty state when there are no completed visits', async () => {
-    (useHomeDashboard as jest.Mock).mockReturnValue({
-      loadError: null,
-      loadState: 'ready',
-      reload: jest.fn(),
-      snapshot: createSnapshot({
-        dashboardStats: {
-          averageVisitLengthMinutes: null,
-          costPerActiveDay: null,
-          costPerHour: null,
-          costPerVisit: null,
-          hasActiveVisit: true,
-          latestVisitAt: '2026-04-02T18:00:00.000Z',
-          rangeType: 'current_year',
-          totalDurationHours: 0,
-          totalDurationMinutes: 0,
-          totalPaid: 714,
-          totalVisits: 0,
-          uniqueVisitDays: 0,
-        },
-        totalSavedVisits: 1,
-      }),
-    });
-
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-
-    await ReactTestRenderer.act(async () => {
-      renderer = ReactTestRenderer.create(<HomeScreen />);
-      await Promise.resolve();
-    });
-
-    expect(JSON.stringify(renderer!.toJSON())).toContain('No completed visits yet');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Go to Visits');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Active visit in progress');
-  });
-
-  it('renders populated KPI cards when metrics are available', async () => {
-    (useHomeDashboard as jest.Mock).mockReturnValue({
-      loadError: null,
-      loadState: 'ready',
-      reload: jest.fn(),
-      snapshot: createSnapshot(),
-    });
-
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-
-    await ReactTestRenderer.act(async () => {
-      renderer = ReactTestRenderer.create(<HomeScreen />);
-      await Promise.resolve();
-    });
-
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Cost per visit');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('$17.85');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Summary metrics');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('$714.00');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Latest visit');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Add costs');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('No active costs yet');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Open Costs');
   });
 
   it('reloads the dashboard when the screen regains focus', async () => {

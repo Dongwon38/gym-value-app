@@ -14,6 +14,8 @@ export function mapAppSettingsToFormValues(
   }
 
   return {
+    checkinSuggestionsEnabled: settings.checkinSuggestionsEnabled,
+    checkoutSuggestionsEnabled: settings.checkoutSuggestionsEnabled,
     currency: settings.currency,
     defaultGstRate: String(settings.defaultGstRate),
     defaultPstRate: String(settings.defaultPstRate),

@@ -26,6 +26,10 @@ export function formatDashboardHours(value: number) {
   return `${value.toFixed(1)} hr`;
 }
 
+export function formatDashboardMonthVisits(value: number) {
+  return `${value} visit${value === 1 ? '' : 's'}`;
+}
+
 export function formatDashboardVisitLength(value: number | null) {
   if (value === null) {
     return 'No completed visits yet';
@@ -85,4 +89,25 @@ export function formatLatestVisitAt(
     month: 'short',
     year: 'numeric',
   }).format(new Date(value));
+}
+
+export function formatElapsedVisitTime(startedAt: string, now = new Date()) {
+  const startedDate = new Date(startedAt);
+
+  if (Number.isNaN(startedDate.getTime())) {
+    return '--';
+  }
+
+  const elapsedMinutes = Math.max(
+    0,
+    Math.round((now.getTime() - startedDate.getTime()) / 60000),
+  );
+  const hours = Math.floor(elapsedMinutes / 60);
+  const minutes = elapsedMinutes % 60;
+
+  if (hours === 0) {
+    return `${minutes}m`;
+  }
+
+  return `${hours}h ${minutes}m`;
 }

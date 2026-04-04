@@ -20,8 +20,10 @@
   - 전체 visual tone은 더 밝은 neutral white + soft green 방향으로 이동
 - 구현 진행 상태:
   - `UIR-01` 착수
+  - `UIR-02` 1차 구현 완료
   - `UIR-03` 1차 구현 완료
   - `UIR-04` 1차 구현 진행 중
+  - `UIR-05` 1차 구현 완료
 
 ---
 
@@ -296,6 +298,9 @@
 - Goal: Home을 KPI-first dashboard로 재구성한다.
 - Scope: hero card, stats grid, active visit card, quick actions
 - Acceptance: 첫 화면에서 value와 next action이 즉시 보인다.
+- 상태 메모:
+  - hero KPI, 3-up summary grid, active visit card, quick actions, 2x2 supporting stats가 1차 반영됨
+  - skeleton polish와 quick action semantics는 후속 polish 대상
 
 ### `UIR-03` Visits list and sheet refresh
 - Goal: Visits를 tracking timeline처럼 보이게 한다.
@@ -317,6 +322,9 @@
 - Goal: Settings를 setup dashboard처럼 정리한다.
 - Scope: grouped sections, gym row list, permission pills, tracking toggles, tax defaults selector
 - Acceptance: 설정 읽기와 편집 진입이 더 짧아진다.
+- 상태 메모:
+  - gym summary + edit sheet, permissions/status pills, tracking toggles, tax defaults sheet, collapsed diagnostics가 1차 반영됨
+  - preset-first selector와 search-assisted gym entry는 후속 feature work와 함께 보완 예정
 
 ### `UIR-06` keyboard, modal, and state polish
 - Goal: 실제 mobile interaction friction을 줄인다.

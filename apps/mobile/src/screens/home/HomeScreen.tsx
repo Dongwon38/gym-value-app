@@ -1,16 +1,16 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { MainTabParamList } from '../../app/navigation/navigationTypes';
 import { useHomeDashboard } from '../../features/home/hooks/useHomeDashboard';
 import {
   formatDashboardCurrency,
   formatDashboardHours,
-  formatDashboardRangeLabel,
-  formatDashboardRangeWindow,
+  formatDashboardMonthVisits,
   formatDashboardVisitLength,
+  formatElapsedVisitTime,
   formatLatestVisitAt,
 } from '../../features/home/useCases/presentation';
 import { Card, EmptyState, PrimaryButton, ScreenContainer } from '../../ui/components';
@@ -39,30 +39,36 @@ export function HomeScreen() {
 
   return (
     <ScreenContainer
-      description="Current year KPI snapshot."
       eyebrow="Home"
       scroll
-      title="Dashboard">
+      showEyebrow={false}
+      title="Gym Value">
       {loadState === 'loading' ? (
-        <Card
-          subtitle="The Home query is loading primary gym, settings, fee items, and visits before building dashboard stats."
-          title="Loading dashboard metrics">
-          <Text style={[styles.note, { color: theme.colors.textSecondary }]}>
-            As soon as the snapshot resolves, this screen switches into the
-            appropriate KPI or empty state automatically.
-          </Text>
-        </Card>
+        <>
+          <Card title="Loading dashboard">
+            <Text style={[styles.supportText, { color: theme.colors.textSecondary }]}>
+              Building your current KPI snapshot.
+            </Text>
+          </Card>
+          <View style={styles.summaryGrid}>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={`home_loading_${index}`} style={styles.summaryCard}>
+                <Text style={[styles.summaryValue, { color: theme.colors.textMuted }]}>
+                  --
+                </Text>
+              </Card>
+            ))}
+          </View>
+        </>
       ) : null}
 
       {loadState === 'error' ? (
-        <Card
-          subtitle="Retry the dashboard query after checking local DB bootstrap and repository state."
-          title="Dashboard needs attention">
-          <Text style={[styles.note, { color: theme.colors.danger }]}>
+        <Card title="Dashboard needs attention">
+          <Text style={[styles.supportText, { color: theme.colors.danger }]}>
             {loadError ?? 'Unknown home dashboard query error.'}
           </Text>
           <PrimaryButton
-            label="Retry Dashboard Load"
+            label="Retry"
             onPress={reload}
             style={{ marginTop: theme.spacing.lg }}
           />
@@ -74,7 +80,7 @@ export function HomeScreen() {
           {!snapshot.primaryGym ? (
             <EmptyState
               actionLabel="Open Settings"
-              body="Home metrics start once a primary gym exists. Set up your gym first so costs, visits, and dashboard stats can be scoped correctly."
+              body="Set up your primary gym to unlock Home metrics and scoped tracking."
               onActionPress={() => {
                 navigation.navigate('Settings');
               }}
@@ -82,126 +88,159 @@ export function HomeScreen() {
             />
           ) : (
             <>
-              <Card
-                subtitle={`${formatDashboardRangeLabel(snapshot.range)} · ${formatDashboardRangeWindow(snapshot.range, snapshot.settings)}`}
-                title="Cost per visit">
-                <Text style={[styles.primaryMetric, { color: theme.colors.textPrimary }]}>
+              <Card style={styles.heroCard}>
+                <Text style={[styles.heroEyebrow, { color: theme.colors.textMuted }]}>
+                  Your gym value
+                </Text>
+                <Text style={[styles.heroValue, { color: theme.colors.textPrimary }]}>
                   {snapshot.dashboardStats.costPerVisit === null
-                    ? getPrimaryMetricFallback(snapshot)
+                    ? getHomeHeroFallback(snapshot)
                     : formatDashboardCurrency(
                         snapshot.dashboardStats.costPerVisit,
                         snapshot.settings,
                       )}
                 </Text>
-                <Text style={[styles.note, { color: theme.colors.textSecondary }]}>
+                <Text style={[styles.heroSupport, { color: theme.colors.textSecondary }]}>
                   {snapshot.dashboardStats.costPerVisit === null
-                    ? getPrimaryMetricSupport(snapshot)
-                    : `${formatDashboardCurrency(snapshot.dashboardStats.totalPaid ?? 0, snapshot.settings)} total paid across ${snapshot.dashboardStats.totalVisits} completed visit${snapshot.dashboardStats.totalVisits === 1 ? '' : 's'}.`}
+                    ? getHomeHeroSupport(snapshot)
+                    : 'per visit'}
                 </Text>
               </Card>
 
-              {snapshot.dashboardStats.hasActiveVisit ? (
-                <Card
-                  subtitle="Active visits stay out of completed KPI math until they are finished."
-                  title="Active visit in progress">
-                  <Text style={[styles.note, { color: theme.colors.textPrimary }]}>
-                    A visit is currently active. It will start affecting average
-                    visit length and cost-per-visit once it is saved as completed.
-                  </Text>
+              <View style={styles.summaryGrid}>
+                <MetricCard
+                  label="Visits YTD"
+                  variant="summary"
+                  value={String(snapshot.dashboardStats.totalVisits)}
+                />
+                <MetricCard
+                  label="Total hours"
+                  variant="summary"
+                  value={formatDashboardHours(snapshot.dashboardStats.totalDurationHours)}
+                />
+                <MetricCard
+                  label="Total spent"
+                  variant="summary"
+                  value={
+                    snapshot.dashboardStats.totalPaid === null
+                      ? '--'
+                      : formatDashboardCurrency(
+                          snapshot.dashboardStats.totalPaid,
+                          snapshot.settings,
+                        )
+                  }
+                />
+              </View>
+
+              {snapshot.activeVisit ? (
+                <Card style={styles.activeVisitCard}>
+                  <View style={styles.activeVisitHeader}>
+                    <View style={styles.activeVisitTitleBlock}>
+                      <Text style={[styles.activeVisitStatus, { color: theme.colors.accent }]}>
+                        Active Visit
+                      </Text>
+                      <Text style={[styles.activeVisitGym, { color: theme.colors.textPrimary }]}>
+                        {snapshot.primaryGym.name}
+                      </Text>
+                    </View>
+                    <Text style={[styles.activeVisitTime, { color: theme.colors.textMuted }]}>
+                      {formatElapsedVisitTime(snapshot.activeVisit.startedAt)}
+                    </Text>
+                  </View>
+                  <View style={styles.activeVisitFooter}>
+                    <Text style={[styles.activeVisitElapsed, { color: theme.colors.accent }]}>
+                      {formatElapsedVisitTime(snapshot.activeVisit.startedAt)}
+                    </Text>
+                    <PrimaryButton
+                      label="Open Visits"
+                      onPress={() => {
+                        navigation.navigate('Visits');
+                      }}
+                    />
+                  </View>
                 </Card>
               ) : null}
 
-              {snapshot.activeFeeItemCount === 0 ? (
-                <EmptyState
-                  actionLabel="Go to Costs"
-                  body="Add at least one active cost item before Home can calculate total paid, cost per visit, or cost per hour."
-                  onActionPress={() => {
-                    navigation.navigate('Costs');
-                  }}
-                  title="No active cost items yet"
-                />
-              ) : snapshot.dashboardStats.totalVisits === 0 ? (
-                <EmptyState
-                  actionLabel="Go to Visits"
-                  body={
-                    snapshot.totalSavedVisits === 0
-                      ? 'Add your first visit to unlock cost per visit and average visit length on Home.'
-                      : 'You have saved visits, but none are completed in the current range yet. Complete a visit to unlock KPI math.'
-                  }
-                  onActionPress={() => {
+              <View style={styles.quickActionRow}>
+                <QuickAction
+                  label={snapshot.activeVisit ? 'Visits' : 'Add Visit'}
+                  onPress={() => {
                     navigation.navigate('Visits');
                   }}
-                  title="No completed visits yet"
                 />
-              ) : (
-                <>
-                  <Card
-                    subtitle="The headline metrics below come from the current year dashboard snapshot."
-                    title="Summary metrics">
-                    <View style={styles.metricList}>
-                      <MetricRow
-                        label="Total paid"
-                        themeColor={theme.colors.textPrimary}
-                        value={
-                          snapshot.dashboardStats.totalPaid === null
-                            ? 'No active costs'
-                            : formatDashboardCurrency(
-                                snapshot.dashboardStats.totalPaid,
-                                snapshot.settings,
-                              )
-                        }
-                      />
-                      <MetricRow
-                        label="Cost per hour"
-                        themeColor={theme.colors.textPrimary}
-                        value={
-                          snapshot.dashboardStats.costPerHour === null
-                            ? 'No duration yet'
-                            : formatDashboardCurrency(
-                                snapshot.dashboardStats.costPerHour,
-                                snapshot.settings,
-                              )
-                        }
-                      />
-                      <MetricRow
-                        label="Completed visits"
-                        themeColor={theme.colors.textPrimary}
-                        value={String(snapshot.dashboardStats.totalVisits)}
-                      />
-                      <MetricRow
-                        label="Average visit length"
-                        themeColor={theme.colors.textPrimary}
-                        value={formatDashboardVisitLength(
-                          snapshot.dashboardStats.averageVisitLengthMinutes,
-                        )}
-                      />
-                      <MetricRow
-                        label="Total duration"
-                        themeColor={theme.colors.textPrimary}
-                        value={formatDashboardHours(
-                          snapshot.dashboardStats.totalDurationHours,
-                        )}
-                      />
-                      <MetricRow
-                        label="Unique visit days"
-                        themeColor={theme.colors.textPrimary}
-                        value={String(snapshot.dashboardStats.uniqueVisitDays)}
-                      />
-                    </View>
-                  </Card>
+                <QuickAction
+                  label="Costs"
+                  onPress={() => {
+                    navigation.navigate('Costs');
+                  }}
+                />
+              </View>
 
-                  <Card
-                    subtitle="The latest visit uses started_at as the range inclusion key."
-                    title="Latest visit">
-                    <Text style={[styles.note, { color: theme.colors.textPrimary }]}>
-                      {formatLatestVisitAt(
-                        snapshot.dashboardStats.latestVisitAt,
-                        snapshot.settings,
-                      )}
-                    </Text>
-                  </Card>
-                </>
-              )}
+              {snapshot.activeFeeItemCount === 0 ? (
+                <Card title="No active costs yet">
+                  <Text style={[styles.supportText, { color: theme.colors.textSecondary }]}>
+                    Add at least one active cost item to unlock cost per visit and total paid.
+                  </Text>
+                  <PrimaryButton
+                    label="Open Costs"
+                    onPress={() => {
+                      navigation.navigate('Costs');
+                    }}
+                    style={{ marginTop: theme.spacing.lg }}
+                  />
+                </Card>
+              ) : null}
+
+              {snapshot.activeFeeItemCount > 0 &&
+              snapshot.dashboardStats.totalVisits === 0 ? (
+                <Card title="No completed visits yet">
+                  <Text style={[styles.supportText, { color: theme.colors.textSecondary }]}>
+                    Add your first completed visit to turn payment into visit-based value.
+                  </Text>
+                  <PrimaryButton
+                    label="Open Visits"
+                    onPress={() => {
+                      navigation.navigate('Visits');
+                    }}
+                    style={{ marginTop: theme.spacing.lg }}
+                  />
+                </Card>
+              ) : null}
+
+              <View style={styles.secondaryGrid}>
+                <MetricCard
+                  label="Cost per hour"
+                  variant="secondary"
+                  value={
+                    snapshot.dashboardStats.costPerHour === null
+                      ? '--'
+                      : formatDashboardCurrency(
+                          snapshot.dashboardStats.costPerHour,
+                          snapshot.settings,
+                        )
+                  }
+                />
+                <MetricCard
+                  label="This month"
+                  variant="secondary"
+                  value={formatDashboardMonthVisits(snapshot.currentMonthVisitCount)}
+                />
+                <MetricCard
+                  label="Avg duration"
+                  variant="secondary"
+                  value={formatDashboardVisitLength(
+                    snapshot.dashboardStats.averageVisitLengthMinutes,
+                  )}
+                />
+                <MetricCard
+                  label="Recent visit"
+                  variant="secondary"
+                  value={formatLatestVisitAt(
+                    snapshot.dashboardStats.latestVisitAt,
+                    snapshot.settings,
+                  )}
+                />
+              </View>
             </>
           )}
         </>
@@ -210,78 +249,201 @@ export function HomeScreen() {
   );
 }
 
-function getPrimaryMetricFallback(
+function getHomeHeroFallback(
   snapshot: NonNullable<ReturnType<typeof useHomeDashboard>['snapshot']>,
 ) {
   if (snapshot.activeFeeItemCount === 0) {
-    return 'Add an active cost item first.';
+    return 'Add costs';
   }
 
   if (snapshot.dashboardStats.totalVisits === 0) {
-    return 'No completed visits yet.';
+    return 'Add visits';
   }
 
-  return 'Cost per visit unavailable.';
+  return 'Unavailable';
 }
 
-function getPrimaryMetricSupport(
+function getHomeHeroSupport(
   snapshot: NonNullable<ReturnType<typeof useHomeDashboard>['snapshot']>,
 ) {
   if (snapshot.activeFeeItemCount === 0) {
-    return 'Home can only calculate value after at least one active cost line exists.';
+    return 'Set up at least one active cost line first.';
   }
 
-  if (snapshot.totalSavedVisits === 0) {
-    return 'Create your first visit to start measuring how much each gym session costs.';
+  if (snapshot.dashboardStats.totalVisits === 0) {
+    return 'Complete a visit to calculate value per visit.';
   }
 
-  return 'Completed visits are required before the main KPI can divide total paid by visit count.';
+  return 'Value per visit is unavailable right now.';
 }
 
-function MetricRow({
+function MetricCard({
   label,
-  themeColor,
+  variant,
   value,
 }: {
   label: string;
-  themeColor: string;
+  variant: 'secondary' | 'summary';
   value: string;
 }) {
+  const theme = useAppTheme();
+
   return (
-    <View style={styles.metricRow}>
-      <Text style={[styles.metricLabel, { color: themeColor }]}>{label}</Text>
-      <Text style={[styles.metricValue, { color: themeColor }]}>{value}</Text>
-    </View>
+    <Card
+      style={variant === 'summary' ? styles.summaryMetricCard : styles.secondaryMetricCard}>
+      <Text style={[styles.metricValue, { color: theme.colors.textPrimary }]}>
+        {value}
+      </Text>
+      <Text style={[styles.metricLabel, { color: theme.colors.textMuted }]}>
+        {label}
+      </Text>
+    </Card>
+  );
+}
+
+function QuickAction({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress: () => void;
+}) {
+  const theme = useAppTheme();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.quickAction,
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border,
+          borderRadius: theme.radius.md,
+          opacity: pressed ? 0.82 : 1,
+        },
+      ]}>
+      <Text style={[styles.quickActionLabel, { color: theme.colors.accent }]}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  metricLabel: {
-    flex: 1,
+  activeVisitCard: {
+    paddingBottom: 14,
+  },
+  activeVisitElapsed: {
+    fontSize: 30,
+    fontWeight: '700',
+    lineHeight: 34,
+  },
+  activeVisitFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  activeVisitGym: {
+    fontSize: 22,
+    fontWeight: '700',
+    lineHeight: 28,
+    marginTop: 4,
+  },
+  activeVisitHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  activeVisitStatus: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+    textTransform: 'uppercase',
+  },
+  activeVisitTime: {
     fontSize: 14,
     lineHeight: 18,
   },
-  metricList: {
-    gap: 12,
+  activeVisitTitleBlock: {
+    flex: 1,
+    minWidth: 0,
   },
-  metricRow: {
+  heroCard: {
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: 16,
-    justifyContent: 'space-between',
+    paddingVertical: 20,
+  },
+  heroEyebrow: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+    lineHeight: 18,
+    textTransform: 'uppercase',
+  },
+  heroSupport: {
+    fontSize: 16,
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  heroValue: {
+    fontSize: 46,
+    fontWeight: '700',
+    lineHeight: 52,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  metricLabel: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 8,
   },
   metricValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    lineHeight: 28,
+  },
+  quickAction: {
+    alignItems: 'center',
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 54,
+    paddingHorizontal: 16,
+  },
+  quickActionLabel: {
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 20,
-    textAlign: 'right',
   },
-  note: {
-    lineHeight: 22,
+  quickActionRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  primaryMetric: {
-    fontSize: 32,
+  secondaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  secondaryMetricCard: {
+    minHeight: 110,
+    width: '48%',
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  summaryMetricCard: {
+    flex: 1,
+    minHeight: 88,
+  },
+  summaryValue: {
+    fontSize: 22,
     fontWeight: '700',
-    lineHeight: 38,
+    lineHeight: 28,
+  },
+  supportText: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
