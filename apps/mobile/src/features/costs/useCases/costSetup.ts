@@ -109,13 +109,17 @@ function createStarterFormValues(preset: StarterCostPreset): FeeItemFormValues {
 function createStarterLineDraft(
   preset: StarterCostPreset,
   existingFeeItem?: FeeItem,
+  options?: {
+    enabled?: boolean;
+    showAdvanced?: boolean;
+  },
 ): CostSetupLineDraft {
   return {
     draftId: buildLineDraftId(
       'starter',
       existingFeeItem?.id ?? preset.key,
     ),
-    enabled: existingFeeItem?.isActive ?? false,
+    enabled: options?.enabled ?? existingFeeItem?.isActive ?? false,
     existingFeeItemId: existingFeeItem?.id ?? null,
     existingSortOrder: existingFeeItem?.sortOrder ?? null,
     formValues: existingFeeItem
@@ -123,7 +127,9 @@ function createStarterLineDraft(
       : createStarterFormValues(preset),
     kind: 'starter',
     presetKey: preset.key,
-    showAdvanced: Boolean(existingFeeItem?.endDate || existingFeeItem?.billingAnchorDate),
+    showAdvanced:
+      options?.showAdvanced ??
+      Boolean(existingFeeItem?.endDate || existingFeeItem?.billingAnchorDate),
   };
 }
 
@@ -163,6 +169,13 @@ function createCustomLineDraft(existingFeeItem: FeeItem): CostSetupLineDraft {
     kind: 'custom',
     presetKey: null,
     showAdvanced: true,
+  };
+}
+
+function createRestoredCustomLineDraft(existingFeeItem: FeeItem): CostSetupLineDraft {
+  return {
+    ...createCustomLineDraft(existingFeeItem),
+    enabled: true,
   };
 }
 
@@ -206,6 +219,54 @@ export function buildCostSetupDraftState(
   return {
     customLines: remainingCostItems.map(createCustomLineDraft),
     starterLines,
+  };
+}
+
+export function restoreCostItemToDraftState(
+  draftState: CostSetupDraftState,
+  feeItem: FeeItem,
+): CostSetupDraftState {
+  const restoredFeeItem = {
+    ...feeItem,
+    isActive: true,
+  } satisfies FeeItem;
+  const preset = starterCostPresets.find(
+    item => item.category === restoredFeeItem.category,
+  );
+
+  if (preset) {
+    return {
+      customLines: draftState.customLines.filter(
+        line => line.existingFeeItemId !== restoredFeeItem.id,
+      ),
+      starterLines: draftState.starterLines.map(line =>
+        line.presetKey === preset.key
+          ? createStarterLineDraft(preset, restoredFeeItem, {
+              enabled: true,
+              showAdvanced: true,
+            })
+          : line,
+      ),
+    };
+  }
+
+  const restoredCustomLine = createRestoredCustomLineDraft(restoredFeeItem);
+  const existingCustomIndex = draftState.customLines.findIndex(
+    line => line.existingFeeItemId === restoredFeeItem.id,
+  );
+
+  if (existingCustomIndex >= 0) {
+    return {
+      ...draftState,
+      customLines: draftState.customLines.map((line, index) =>
+        index === existingCustomIndex ? restoredCustomLine : line,
+      ),
+    };
+  }
+
+  return {
+    ...draftState,
+    customLines: [...draftState.customLines, restoredCustomLine],
   };
 }
 

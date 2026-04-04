@@ -70,6 +70,7 @@ describe('CostsScreen', () => {
       hasPrimaryGym: true,
       primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
       removeCustomLine: jest.fn(),
+      restoreCostItem: jest.fn(),
       save: jest.fn(),
       saveFeedback: null,
       saveState: 'idle',
@@ -151,6 +152,7 @@ describe('CostsScreen', () => {
     expect(JSON.stringify(renderer!.toJSON())).toContain('Inactive cost history');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Monthly membership');
     expect(JSON.stringify(renderer!.toJSON())).toContain('$59.99');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Restore to setup');
   });
 
   it('renders the load error surface when the cost query fails', async () => {

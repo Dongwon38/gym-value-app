@@ -1,4 +1,8 @@
-import { buildCostSetupDraftState, getCostSetupLinePreview } from './costSetup';
+import {
+  buildCostSetupDraftState,
+  getCostSetupLinePreview,
+  restoreCostItemToDraftState,
+} from './costSetup';
 
 function createFeeItem(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -87,6 +91,49 @@ describe('costSetup', () => {
       preTaxAmount: 100,
       totalAmount: 112,
       totalTaxAmount: 12,
+    });
+  });
+
+  it('restores an inactive starter-category row back into the matching starter line', () => {
+    const draftState = buildCostSetupDraftState([]);
+    const restoredState = restoreCostItemToDraftState(
+      draftState,
+      createFeeItem({
+        category: 'annual_fee',
+        id: 'fee_annual',
+        isActive: false,
+        label: 'Annual fee',
+      }),
+    );
+
+    const annualLine = restoredState.starterLines.find(
+      line => line.presetKey === 'annual',
+    );
+
+    expect(annualLine).toMatchObject({
+      enabled: true,
+      existingFeeItemId: 'fee_annual',
+    });
+    expect(annualLine?.showAdvanced).toBe(true);
+  });
+
+  it('restores an inactive custom row into the custom line collection', () => {
+    const draftState = buildCostSetupDraftState([]);
+    const restoredState = restoreCostItemToDraftState(
+      draftState,
+      createFeeItem({
+        category: 'other',
+        id: 'fee_parking',
+        isActive: false,
+        label: 'Parking',
+      }),
+    );
+
+    expect(restoredState.customLines).toHaveLength(1);
+    expect(restoredState.customLines[0]).toMatchObject({
+      enabled: true,
+      existingFeeItemId: 'fee_parking',
+      kind: 'custom',
     });
   });
 });

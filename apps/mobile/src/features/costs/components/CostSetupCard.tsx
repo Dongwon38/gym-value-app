@@ -247,7 +247,7 @@ function CostSetupLineSection({
         </View>
         {line.existingFeeItemId ? (
           <Text style={[styles.persistedBadge, { color: theme.colors.accent }]}>
-            Saved row
+            {line.enabled ? 'Saved row' : 'Saved row (inactive on next save)'}
           </Text>
         ) : null}
       </View>

@@ -492,11 +492,12 @@ MVP에서는 세금을 단순 고정값으로 하드코딩하지 않는다.
 8. **Implementation Checklist** — PR-sized task, live status, acceptance/verification 기준
 9. **Manual MVP QA Report** — manual-only MVP 기준 automated/workspace QA evidence
 10. **Assisted Check-In QA** — assisted flow wiring과 fallback polish QA evidence
-11. **Future Development Playbook** — v0.1 이후 전체 roadmap과 운영 순서
-12. **Post-MVP Local Expansion Plan** — 다음 local UX 확장 블록의 세부 구현 순서
-13. **Online Expansion Architecture** — account/backup/sync/web 확장용 아키텍처 기준
-14. **Backup and Restore Spec** — 첫 online 기능으로서 backup/restore 범위와 계약
-15. (향후) Repository / Use Case Scaffold 등 — 필요 시 추가
+11. **Cost Setup QA** — post-MVP cost setup 확장 block의 automated/workspace QA evidence
+12. **Future Development Playbook** — v0.1 이후 전체 roadmap과 운영 순서
+13. **Post-MVP Local Expansion Plan** — 다음 local UX 확장 블록의 세부 구현 순서
+14. **Online Expansion Architecture** — account/backup/sync/web 확장용 아키텍처 기준
+15. **Backup and Restore Spec** — 첫 online 기능으로서 backup/restore 범위와 계약
+16. (향후) Repository / Use Case Scaffold 등 — 필요 시 추가
 
 ### 15.2 문서 수 최소화 원칙
 - UX 관련 상세는 `Product Spec`에 묶는다

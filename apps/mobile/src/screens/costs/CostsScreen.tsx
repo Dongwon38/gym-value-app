@@ -25,6 +25,7 @@ export function CostsScreen() {
     hasPrimaryGym,
     primaryGym,
     removeCustomLine,
+    restoreCostItem,
     save,
     saveFeedback,
     saveState,
@@ -115,7 +116,7 @@ export function CostsScreen() {
 
       {loadState === 'ready' && inactiveCostItems.length > 0 ? (
         <Card
-          subtitle="Inactive rows stay visible for audit history. Reactivating equivalent charges is handled by re-entering them in the setup form."
+          subtitle="Inactive rows stay visible for audit history. Restore a row to the setup form when you want to reactivate it on the next save."
           title="Inactive cost history">
           <View style={styles.historyList}>
             {inactiveCostItems.map(costItem => (
@@ -141,6 +142,19 @@ export function CostsScreen() {
                 <Text style={[styles.historyMeta, { color: theme.colors.textMuted }]}>
                   {formatCostItemDateRange(costItem)}
                 </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    restoreCostItem(costItem);
+                  }}
+                  style={({ pressed }) => [
+                    styles.restoreAction,
+                    { marginTop: theme.spacing.md, opacity: pressed ? 0.7 : 1 },
+                  ]}>
+                  <Text style={[styles.restoreActionLabel, { color: theme.colors.accent }]}>
+                    Restore to setup
+                  </Text>
+                </Pressable>
               </View>
             ))}
           </View>
@@ -184,5 +198,13 @@ const styles = StyleSheet.create({
   note: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  restoreAction: {
+    alignSelf: 'flex-start',
+  },
+  restoreActionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 18,
   },
 });

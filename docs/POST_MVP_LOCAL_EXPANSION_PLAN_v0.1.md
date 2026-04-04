@@ -195,7 +195,8 @@ settings/gym/cost setup이 바뀌기 전에 먼저 만들면 다시 뜯어고치
 - `LXP-COST-02` 완료
 - `LXP-COST-03` 완료
 - `LXP-COST-04` 완료
-- 다음 작업: `LXP-COST-05`
+- `LXP-COST-05` 완료
+- 다음 작업: `LXP-SET-01`
 
 #### `LXP-COST-01` 스펙과 decision lock 갱신
 - Goal: 비용 UX 변경을 코어 문서에 먼저 반영한다.
@@ -226,6 +227,10 @@ settings/gym/cost setup이 바뀌기 전에 먼저 만들면 다시 뜯어고치
 - Goal: 기존 row 편집/비활성화와 새 UI가 자연스럽게 공존하게 한다.
 - Scope: existing row hydrate, inactive flow 유지, regression QA, docs evidence
 - Acceptance: create/edit/inactive/history가 모두 새 구조에서 일관되게 동작한다.
+- 구현 메모:
+  - inactive history row에 `Restore to setup` 액션을 추가했다.
+  - restore는 starter/custom 규칙에 맞게 draft로 복원되고, 다음 save 시 기존 row update path로 재활성화된다.
+  - QA evidence는 `COST_SETUP_QA_v0.1.md`에 정리했다.
 
 ### 5.5 완료 기준
 - 사용자는 기본 비용 4종을 화면에서 바로 인지하고 빠르게 입력할 수 있다.

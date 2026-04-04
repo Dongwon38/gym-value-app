@@ -8,6 +8,7 @@ import { getPrimaryGym } from '../../gym/useCases/primaryGym';
 import {
   buildCostSetupDraftState,
   createCustomCostSetupLine,
+  restoreCostItemToDraftState,
   type CostSetupLineDraft,
 } from '../useCases/costSetup';
 import {
@@ -160,6 +161,21 @@ export function useCostSetupForm({
     customLines,
     hasPrimaryGym: primaryGym !== null,
     primaryGym,
+    restoreCostItem: (feeItem: FeeItem) => {
+      const nextDraftState = restoreCostItemToDraftState(
+        {
+          customLines,
+          starterLines,
+        },
+        feeItem,
+      );
+
+      setStarterLines(nextDraftState.starterLines);
+      setCustomLines(nextDraftState.customLines);
+      setValidationErrorsByLine({});
+      setSaveFeedback(`Restored ${feeItem.label} to the setup form. Save to reactivate it.`);
+      setSaveState('idle');
+    },
     removeCustomLine: (lineId: string) => {
       setCustomLines(currentLines =>
         currentLines.filter(line => line.draftId !== lineId),

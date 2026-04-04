@@ -102,4 +102,40 @@ describe('saveCostSetup', () => {
       saveCostSetup([customLine], { gymId: 'gym_1' }),
     ).rejects.toBeInstanceOf(CostSetupFormValidationError);
   });
+
+  it('updates a restored existing row instead of creating a new one', async () => {
+    (saveCostItem as jest.Mock).mockResolvedValue({
+      id: 'fee_signup',
+      label: 'Signup fee',
+    });
+
+    const restoredLine = {
+      ...buildCostSetupDraftState([]).starterLines[1],
+      enabled: true,
+      existingFeeItemId: 'fee_signup',
+      existingSortOrder: 1,
+      formValues: {
+        ...buildCostSetupDraftState([]).starterLines[1].formValues,
+        amountPreTax: '29.99',
+      },
+    };
+
+    const summary = await saveCostSetup([restoredLine], { gymId: 'gym_1' });
+
+    expect(saveCostItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountPreTax: '29.99',
+      }),
+      {
+        existingFeeItem: { id: 'fee_signup', sortOrder: 1 },
+        gymId: 'gym_1',
+      },
+    );
+    expect(summary).toEqual({
+      createdCount: 0,
+      deactivatedCount: 0,
+      skippedCount: 0,
+      updatedCount: 1,
+    });
+  });
 });
