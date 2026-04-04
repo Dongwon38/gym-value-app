@@ -56,6 +56,7 @@ export function useCostSetupForm({
   costItems: FeeItem[];
   onReload: () => void;
 }) {
+  const [supportReloadToken, setSupportReloadToken] = useState(0);
   const [supportState, setSupportState] =
     useState<CostSetupSupportState>('loading');
   const [supportError, setSupportError] = useState<string | null>(null);
@@ -111,7 +112,7 @@ export function useCostSetupForm({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [supportReloadToken]);
 
   useEffect(() => {
     if (supportState !== 'ready') {
@@ -163,6 +164,9 @@ export function useCostSetupForm({
     customLines: draftState.customLines,
     hasPrimaryGym: primaryGym !== null,
     primaryGym,
+    reloadSupport: useCallback(() => {
+      setSupportReloadToken(currentToken => currentToken + 1);
+    }, []),
     restoreCostItem: useCallback((feeItem: FeeItem) => {
       setDraftState(currentDraftState =>
         restoreCostItemToDraftState(currentDraftState, feeItem),

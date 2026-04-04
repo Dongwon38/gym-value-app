@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -18,8 +18,24 @@ import { useAppTheme } from '../../ui/theme';
 
 export function HomeScreen() {
   const theme = useAppTheme();
+  const isFocused = useIsFocused();
+  const previousFocusRef = React.useRef<boolean | null>(null);
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const { loadError, loadState, reload, snapshot } = useHomeDashboard();
+
+  React.useEffect(() => {
+    if (previousFocusRef.current === null) {
+      previousFocusRef.current = isFocused;
+      return;
+    }
+
+    const wasFocused = previousFocusRef.current;
+    previousFocusRef.current = isFocused;
+
+    if (!wasFocused && isFocused) {
+      reload();
+    }
+  }, [isFocused, reload]);
 
   return (
     <ScreenContainer

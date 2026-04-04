@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { FeeItem } from '../../../domain/models';
 import { getCostItems } from '../useCases/costItems';
@@ -47,6 +47,9 @@ export function useCostItems() {
   }, [reloadToken]);
 
   const activeCount = costItems.filter(costItem => costItem.isActive).length;
+  const reload = useCallback(() => {
+    setReloadToken(currentToken => currentToken + 1);
+  }, []);
 
   return {
     activeCount,
@@ -54,8 +57,6 @@ export function useCostItems() {
     inactiveCount: costItems.length - activeCount,
     loadError,
     loadState,
-    reload: () => {
-      setReloadToken(currentToken => currentToken + 1);
-    },
+    reload,
   };
 }

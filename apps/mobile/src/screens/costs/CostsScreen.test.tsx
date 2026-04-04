@@ -13,6 +13,10 @@ jest.mock('../../features/costs/useCases/costItems', () => ({
   formatCostItemDateRange: jest.fn(() => 'Starts 2026-04-01'),
 }));
 
+jest.mock('@react-navigation/native', () => ({
+  useIsFocused: jest.fn(() => true),
+}));
+
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
 
@@ -26,6 +30,7 @@ jest.mock('react-native-safe-area-context', () => {
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 
+import { useIsFocused } from '@react-navigation/native';
 import { useCostItems } from '../../features/costs/hooks/useCostItems';
 import { useCostSetupForm } from '../../features/costs/hooks/useCostSetupForm';
 import { CostsScreen } from './CostsScreen';
@@ -69,6 +74,7 @@ describe('CostsScreen', () => {
       customLines: [],
       hasPrimaryGym: true,
       primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
+      reloadSupport: jest.fn(),
       removeCustomLine: jest.fn(),
       restoreCostItem: jest.fn(),
       save: jest.fn(),
@@ -175,5 +181,64 @@ describe('CostsScreen', () => {
 
     expect(JSON.stringify(renderer!.toJSON())).toContain('Cost list needs attention');
     expect(JSON.stringify(renderer!.toJSON())).toContain('fee item query failed');
+  });
+
+  it('reloads cost rows and gym support when the screen regains focus', async () => {
+    const reload = jest.fn();
+    const reloadSupport = jest.fn();
+
+    (useIsFocused as jest.Mock)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+    (useCostSetupForm as jest.Mock).mockReturnValue({
+      addCustomLine: jest.fn(),
+      appSettings: {
+        currency: 'CAD',
+        defaultGstRate: 0.05,
+        defaultPstRate: 0.07,
+        locale: 'en-CA',
+      },
+      customLines: [],
+      hasPrimaryGym: true,
+      primaryGym: { id: 'gym_1', name: 'Downtown Gym' },
+      reloadSupport,
+      removeCustomLine: jest.fn(),
+      restoreCostItem: jest.fn(),
+      save: jest.fn(),
+      saveFeedback: null,
+      saveState: 'idle',
+      setLineFieldValue: jest.fn(),
+      starterLines: [],
+      supportError: null,
+      supportState: 'ready',
+      toggleLineAdvanced: jest.fn(),
+      validationErrorsByLine: {},
+    });
+    (useCostItems as jest.Mock).mockReturnValue({
+      activeCount: 0,
+      costItems: [],
+      inactiveCount: 0,
+      loadError: null,
+      loadState: 'ready',
+      reload,
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<CostsScreen />);
+      await Promise.resolve();
+    });
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(reloadSupport).not.toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.update(<CostsScreen />);
+      await Promise.resolve();
+    });
+
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(reloadSupport).toHaveBeenCalledTimes(1);
   });
 });

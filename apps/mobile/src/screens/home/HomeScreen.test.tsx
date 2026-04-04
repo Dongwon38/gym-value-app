@@ -3,6 +3,7 @@ jest.mock('../../features/home/hooks/useHomeDashboard', () => ({
 }));
 
 jest.mock('@react-navigation/native', () => ({
+  useIsFocused: jest.fn(() => true),
   useNavigation: () => ({
     navigate: jest.fn(),
   }),
@@ -21,6 +22,7 @@ jest.mock('react-native-safe-area-context', () => {
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 
+import { useIsFocused } from '@react-navigation/native';
 import { useHomeDashboard } from '../../features/home/hooks/useHomeDashboard';
 import { HomeScreen } from './HomeScreen';
 
@@ -175,5 +177,35 @@ describe('HomeScreen', () => {
     expect(JSON.stringify(renderer!.toJSON())).toContain('Summary metrics');
     expect(JSON.stringify(renderer!.toJSON())).toContain('$714.00');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Latest visit');
+  });
+
+  it('reloads the dashboard when the screen regains focus', async () => {
+    const reload = jest.fn();
+
+    (useIsFocused as jest.Mock)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+    (useHomeDashboard as jest.Mock).mockReturnValue({
+      loadError: null,
+      loadState: 'ready',
+      reload,
+      snapshot: createSnapshot(),
+    });
+
+    let renderer: ReactTestRenderer.ReactTestRenderer;
+
+    await ReactTestRenderer.act(async () => {
+      renderer = ReactTestRenderer.create(<HomeScreen />);
+      await Promise.resolve();
+    });
+
+    expect(reload).not.toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      renderer!.update(<HomeScreen />);
+      await Promise.resolve();
+    });
+
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 });

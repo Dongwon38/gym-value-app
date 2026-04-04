@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { DashboardRangeType } from '../../../domain/models';
 import {
@@ -51,12 +51,14 @@ export function useHomeDashboard(rangeType: DashboardRangeType = 'current_year')
     };
   }, [rangeType, reloadToken]);
 
+  const reload = useCallback(() => {
+    setReloadToken(currentToken => currentToken + 1);
+  }, []);
+
   return {
     loadError,
     loadState,
-    reload: () => {
-      setReloadToken(currentToken => currentToken + 1);
-    },
+    reload,
     snapshot,
   };
 }

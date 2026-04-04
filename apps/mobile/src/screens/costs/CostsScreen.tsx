@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -15,6 +16,8 @@ import { useAppTheme } from '../../ui/theme';
 
 export function CostsScreen() {
   const theme = useAppTheme();
+  const isFocused = useIsFocused();
+  const previousFocusRef = React.useRef<boolean | null>(null);
   const { activeCount, costItems, inactiveCount, loadError, loadState, reload } =
     useCostItems();
   const inactiveCostItems = costItems.filter(costItem => !costItem.isActive);
@@ -24,6 +27,7 @@ export function CostsScreen() {
     customLines,
     hasPrimaryGym,
     primaryGym,
+    reloadSupport,
     removeCustomLine,
     restoreCostItem,
     save,
@@ -39,6 +43,21 @@ export function CostsScreen() {
     costItems,
     onReload: reload,
   });
+
+  React.useEffect(() => {
+    if (previousFocusRef.current === null) {
+      previousFocusRef.current = isFocused;
+      return;
+    }
+
+    const wasFocused = previousFocusRef.current;
+    previousFocusRef.current = isFocused;
+
+    if (!wasFocused && isFocused) {
+      reload();
+      reloadSupport();
+    }
+  }, [isFocused, reload, reloadSupport]);
 
   return (
     <ScreenContainer
