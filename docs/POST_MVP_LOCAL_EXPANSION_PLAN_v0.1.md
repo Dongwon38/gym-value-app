@@ -190,6 +190,13 @@ settings/gym/cost setup이 바뀌기 전에 먼저 만들면 다시 뜯어고치
 
 ### 5.4 PR-sized 작업 단위
 
+현재 상태 기준(2026-04-03):
+- `LXP-COST-01` 완료
+- `LXP-COST-02` 완료
+- `LXP-COST-03` 완료
+- `LXP-COST-04` 완료
+- 다음 작업: `LXP-COST-05`
+
 #### `LXP-COST-01` 스펙과 decision lock 갱신
 - Goal: 비용 UX 변경을 코어 문서에 먼저 반영한다.
 - Scope: Product Spec, Data Model, Initial Schema, 이 문서의 결정 반영
@@ -209,6 +216,11 @@ settings/gym/cost setup이 바뀌기 전에 먼저 만들면 다시 뜯어고치
 - Goal: starter line + extra line 흐름을 실제 화면에 반영한다.
 - Scope: Costs screen, editor sections, pre-tax input, after-tax preview, optional advanced fields
 - Acceptance: 기본 4종을 빠르게 입력할 수 있고, 필요한 경우만 추가 필드를 펼친다.
+- 구현 메모:
+  - Costs 화면 상단에 `Membership / Signup fee / Annual fee / Locker fee` starter line이 항상 보이도록 구성했다.
+  - 각 line은 `Use / Skip`, cadence, tax handling, pre-tax amount, after-tax preview를 가진다.
+  - 금액이 비어 있거나 `Skip`인 starter line은 저장 시 row를 만들지 않는다.
+  - 기존 active row는 starter/custom draft로 hydrate되고, inactive row는 하단 history에 유지한다.
 
 #### `LXP-COST-05` edit/inactive/history polish와 QA
 - Goal: 기존 row 편집/비활성화와 새 UI가 자연스럽게 공존하게 한다.
