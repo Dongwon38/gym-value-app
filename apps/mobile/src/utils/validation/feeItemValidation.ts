@@ -4,7 +4,7 @@ import {
   feeItemTaxRateLimits,
 } from '../../domain/constants';
 import {
-  feeItemCadencesForV01,
+  feeItemCadences,
   feeItemCategories,
   feeItemTaxModes,
 } from '../../domain/models';
@@ -25,7 +25,6 @@ export function validateFeeItemForm(values: FeeItemFormValues) {
   const amountPreTax = parseNumericInput(values.amountPreTax);
   const gstRate = parseNumericInput(values.gstRate);
   const pstRate = parseNumericInput(values.pstRate);
-
   if (isBlank(values.label)) {
     issues.push({
       code: 'fee_item.label.required',
@@ -46,7 +45,7 @@ export function validateFeeItemForm(values: FeeItemFormValues) {
 
   if (
     values.cadence === '' ||
-    !feeItemCadencesForV01.includes(values.cadence)
+    !feeItemCadences.includes(values.cadence)
   ) {
     issues.push({
       code:
@@ -105,6 +104,15 @@ export function validateFeeItemForm(values: FeeItemFormValues) {
       code: 'fee_item.end_date.before_start',
       field: 'endDate',
       message: validationMessages.feeItem.endDateMustBeOnOrAfterStartDate,
+      severity: 'error',
+    });
+  }
+
+  if (!isBlank(values.billingAnchorDate) && !isValidDateOnly(values.billingAnchorDate)) {
+    issues.push({
+      code: 'fee_item.billing_anchor_date.invalid',
+      field: 'billingAnchorDate',
+      message: validationMessages.feeItem.invalidDate,
       severity: 'error',
     });
   }

@@ -36,6 +36,42 @@ function resolveFeeItemEndDate(endDate: string | null) {
   return endDate ?? '9999-12-31';
 }
 
+function toUtcDate(value: string) {
+  const { day, month, year } = parseDateOnlyParts(value);
+
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function formatUtcDateOnly(date: Date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function addDaysToDateOnly(value: string, daysToAdd: number) {
+  const nextDate = toUtcDate(value);
+  nextDate.setUTCDate(nextDate.getUTCDate() + daysToAdd);
+
+  return formatUtcDateOnly(nextDate);
+}
+
+function getDateDiffInDays(startDate: string, endDate: string) {
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+  return Math.floor(
+    (toUtcDate(endDate).getTime() - toUtcDate(startDate).getTime()) /
+      millisecondsPerDay,
+  );
+}
+
+function resolveOccurrenceAnchorDate(
+  feeItem: Pick<FeeItem, 'billingAnchorDate' | 'startDate'>,
+) {
+  return feeItem.billingAnchorDate ?? feeItem.startDate;
+}
+
 function getMonthlyOccurrenceDates(
   feeItem: Pick<FeeItem, 'endDate' | 'startDate'>,
   range: Pick<DashboardDateRange, 'endDate' | 'startDate'>,
@@ -68,7 +104,7 @@ function getMonthlyOccurrenceDates(
 }
 
 function getAnnualOccurrenceDates(
-  feeItem: Pick<FeeItem, 'endDate' | 'startDate'>,
+  feeItem: Pick<FeeItem, 'billingAnchorDate' | 'endDate' | 'startDate'>,
   range: Pick<DashboardDateRange, 'endDate' | 'startDate'>,
 ) {
   if (!doDateRangesOverlap(feeItem.startDate, feeItem.endDate, range)) {
@@ -76,7 +112,8 @@ function getAnnualOccurrenceDates(
   }
 
   const occurrenceDates: string[] = [];
-  const { day, month } = parseDateOnlyParts(feeItem.startDate);
+  const anchorDate = resolveOccurrenceAnchorDate(feeItem);
+  const { day, month } = parseDateOnlyParts(anchorDate);
   const { year: rangeStartYear } = parseDateOnlyParts(range.startDate);
   const { year: rangeEndYear } = parseDateOnlyParts(range.endDate);
   const feeItemEndDate = resolveFeeItemEndDate(feeItem.endDate);
@@ -100,8 +137,48 @@ function getAnnualOccurrenceDates(
   return occurrenceDates;
 }
 
+function getBiWeeklyOccurrenceDates(
+  feeItem: Pick<FeeItem, 'billingAnchorDate' | 'endDate' | 'startDate'>,
+  range: Pick<DashboardDateRange, 'endDate' | 'startDate'>,
+) {
+  if (!doDateRangesOverlap(feeItem.startDate, feeItem.endDate, range)) {
+    return [];
+  }
+
+  const anchorDate = resolveOccurrenceAnchorDate(feeItem);
+  const feeItemEndDate = resolveFeeItemEndDate(feeItem.endDate);
+  const effectiveStartDate =
+    range.startDate > feeItem.startDate ? range.startDate : feeItem.startDate;
+  const effectiveEndDate =
+    range.endDate < feeItemEndDate ? range.endDate : feeItemEndDate;
+
+  let firstOccurrenceDate = anchorDate;
+
+  if (anchorDate < effectiveStartDate) {
+    const daysSinceAnchor = getDateDiffInDays(anchorDate, effectiveStartDate);
+    const periodsToAdvance = Math.ceil(daysSinceAnchor / 14);
+    firstOccurrenceDate = addDaysToDateOnly(anchorDate, periodsToAdvance * 14);
+  }
+
+  const occurrenceDates: string[] = [];
+  let currentOccurrenceDate = firstOccurrenceDate;
+
+  while (currentOccurrenceDate <= effectiveEndDate) {
+    if (currentOccurrenceDate >= feeItem.startDate) {
+      occurrenceDates.push(currentOccurrenceDate);
+    }
+
+    currentOccurrenceDate = addDaysToDateOnly(currentOccurrenceDate, 14);
+  }
+
+  return occurrenceDates;
+}
+
 function getOccurrenceDatesForRange(
-  feeItem: Pick<FeeItem, 'cadence' | 'endDate' | 'startDate'>,
+  feeItem: Pick<
+    FeeItem,
+    'billingAnchorDate' | 'cadence' | 'endDate' | 'startDate'
+  >,
   range: Pick<DashboardDateRange, 'endDate' | 'startDate'>,
 ) {
   if (feeItem.cadence === 'custom') {
@@ -116,6 +193,10 @@ function getOccurrenceDatesForRange(
     return getMonthlyOccurrenceDates(feeItem, range);
   }
 
+  if (feeItem.cadence === 'bi_weekly') {
+    return getBiWeeklyOccurrenceDates(feeItem, range);
+  }
+
   return getAnnualOccurrenceDates(feeItem, range);
 }
 
@@ -126,11 +207,15 @@ export function resolveEffectiveTaxRates(
   const gstRate =
     feeItem.taxMode === 'custom'
       ? feeItem.gstRate ?? 0
-      : appSettings.defaultGstRate;
+      : feeItem.taxMode === 'none'
+        ? 0
+        : appSettings.defaultGstRate;
   const pstRate =
     feeItem.taxMode === 'custom'
       ? feeItem.pstRate ?? 0
-      : appSettings.defaultPstRate;
+      : feeItem.taxMode === 'none'
+        ? 0
+        : appSettings.defaultPstRate;
 
   return {
     combinedRate: Number((gstRate + pstRate).toFixed(10)),
@@ -158,6 +243,7 @@ export function expandFeeItemOccurrencesForRange(
   feeItem: Pick<
     FeeItem,
     | 'amountPreTax'
+    | 'billingAnchorDate'
     | 'cadence'
     | 'endDate'
     | 'gstRate'
@@ -200,6 +286,7 @@ export function expandFeeItemsForRange(
     Pick<
       FeeItem,
       | 'amountPreTax'
+      | 'billingAnchorDate'
       | 'cadence'
       | 'endDate'
       | 'gstRate'
@@ -223,6 +310,7 @@ export function calculateTotalPaidForRange(
     Pick<
       FeeItem,
       | 'amountPreTax'
+      | 'billingAnchorDate'
       | 'cadence'
       | 'endDate'
       | 'gstRate'

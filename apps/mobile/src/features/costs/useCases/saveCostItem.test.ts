@@ -86,6 +86,43 @@ describe('saveCostItem', () => {
     });
   });
 
+  it('persists bi-weekly cadence, no-tax mode, and billing anchor date', async () => {
+    (createFeeItem as jest.Mock).mockResolvedValue({
+      id: 'fee_2',
+      label: 'Bi-weekly membership',
+    });
+
+    await saveCostItem(
+      {
+        ...emptyFeeItemFormValues,
+        amountPreTax: '44.99',
+        billingAnchorDate: '2025-12-31',
+        cadence: 'bi_weekly',
+        category: 'monthly_membership',
+        label: 'Bi-weekly membership',
+        startDate: '2026-01-01',
+        taxMode: 'none',
+      },
+      { gymId: 'gym_1' },
+    );
+
+    expect(createFeeItem).toHaveBeenCalledWith({
+      amountPreTax: 44.99,
+      billingAnchorDate: '2025-12-31',
+      cadence: 'bi_weekly',
+      category: 'monthly_membership',
+      endDate: null,
+      gstRate: null,
+      gymId: 'gym_1',
+      isActive: true,
+      label: 'Bi-weekly membership',
+      pstRate: null,
+      sortOrder: undefined,
+      startDate: '2026-01-01',
+      taxMode: 'none',
+    });
+  });
+
   it('throws a validation error when required cost fields are missing', async () => {
     await expect(
       saveCostItem(

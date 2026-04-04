@@ -3,7 +3,7 @@ export const validationMessages = {
     amountMustBeNonNegative: 'Enter an amount that is 0 or greater.',
     cadenceRequired: 'Select a valid cadence.',
     customCadenceNotSupported:
-      'Custom cadence is not supported in v0.1. Choose one-time, monthly, or annual.',
+      'Custom cadence is not supported in v0.1. Choose one-time, bi-weekly, monthly, or annual.',
     customTaxRatesRequired:
       'Enter both GST and PST rates when using custom tax.',
     endDateMustBeOnOrAfterStartDate:

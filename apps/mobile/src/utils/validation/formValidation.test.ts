@@ -56,6 +56,21 @@ describe('validateFeeItemForm', () => {
     expect(hasValidationErrors(result)).toBe(false);
   });
 
+  it('accepts a valid bi-weekly no-tax fee item with billing anchor date', () => {
+    const result = validateFeeItemForm({
+      ...emptyFeeItemFormValues,
+      amountPreTax: '49.99',
+      billingAnchorDate: '2026-01-15',
+      cadence: 'bi_weekly',
+      category: 'monthly_membership',
+      label: 'Membership',
+      startDate: '2026-01-01',
+      taxMode: 'none',
+    });
+
+    expect(hasValidationErrors(result)).toBe(false);
+  });
+
   it('rejects invalid amount, dates, and missing custom tax rates', () => {
     const result = validateFeeItemForm({
       ...emptyFeeItemFormValues,
@@ -79,6 +94,23 @@ describe('validateFeeItemForm', () => {
         'label',
         'taxMode',
       ]),
+    );
+  });
+
+  it('rejects invalid billing anchor date format', () => {
+    const result = validateFeeItemForm({
+      ...emptyFeeItemFormValues,
+      amountPreTax: '49.99',
+      billingAnchorDate: '2026-99-99',
+      cadence: 'annual',
+      category: 'annual_fee',
+      label: 'Annual fee',
+      startDate: '2026-01-01',
+      taxMode: 'inherit_default',
+    });
+
+    expect(getValidationErrors(result).map(issue => issue.field)).toEqual(
+      expect.arrayContaining(['billingAnchorDate']),
     );
   });
 });
