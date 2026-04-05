@@ -3,18 +3,14 @@ import React from 'react';
 import { GymSetupSection } from '../../features/gym/components/GymSetupSection';
 import { AssistedCheckInSection } from '../../features/settings/components/AssistedCheckInSection';
 import { AppSettingsSection } from '../../features/settings/components/AppSettingsSection';
-import { ScreenContainer } from '../../ui/components';
+import { Screen } from '../../ui';
 
 export function SettingsScreen() {
   return (
-    <ScreenContainer
-      eyebrow="Settings"
-      scroll
-      showEyebrow={false}
-      title="Settings">
+    <Screen scroll title="Settings">
       <GymSetupSection />
       <AssistedCheckInSection />
       <AppSettingsSection />
-    </ScreenContainer>
+    </Screen>
   );
 }

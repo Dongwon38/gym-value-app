@@ -12,8 +12,8 @@ const navigationTheme = {
   colors: {
     ...DefaultTheme.colors,
     background: appTheme.colors.background,
-    card: appTheme.colors.surface,
-    primary: appTheme.colors.accent,
+    card: appTheme.colors.card,
+    primary: appTheme.colors.success,
     text: appTheme.colors.textPrimary,
     border: appTheme.colors.border,
   },

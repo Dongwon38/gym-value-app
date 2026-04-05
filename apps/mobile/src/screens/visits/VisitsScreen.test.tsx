@@ -24,6 +24,12 @@ jest.mock('react-native-safe-area-context', () => {
     SafeAreaView: ({ children }: { children: React.ReactNode }) => (
       <View>{children}</View>
     ),
+    useSafeAreaInsets: () => ({
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    }),
   };
 });
 
@@ -108,7 +114,7 @@ describe('VisitsScreen', () => {
     expect(JSON.stringify(renderer!.toJSON())).toContain('04/03');
     expect(JSON.stringify(renderer!.toJSON())).toContain('18:10 - 19:25');
     expect(JSON.stringify(renderer!.toJSON())).toContain('1 hr 15 min');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Edit');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('1 visit this month');
   });
 
   it('renders the primary gym empty state when nothing can be added yet', async () => {

@@ -1,10 +1,18 @@
 import React from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { View } from 'react-native';
 
-import { BottomSheet, Card, PrimaryButton, TextField } from '../../../ui/components';
-import { useAppTheme } from '../../../ui/theme';
 import { useAppSettingsForm } from '../hooks/useAppSettingsForm';
-import { SettingsRow } from './SettingsRow';
+import {
+  BottomSheetFormShell,
+  Button,
+  Card,
+  Input,
+  Row,
+  SectionHeader,
+  SettingsRow,
+  SwitchRow,
+  Text,
+} from '../../../ui';
 
 function findFieldMessage(
   issues: Array<{ field: string; message: string }>,
@@ -25,7 +33,6 @@ function formatRatePercentage(value: number | string | undefined) {
 }
 
 export function AppSettingsSection() {
-  const theme = useAppTheme();
   const [editorVisible, setEditorVisible] = React.useState(false);
   const {
     errors,
@@ -48,130 +55,58 @@ export function AppSettingsSection() {
     }
   }
 
-  const footer = (
-    <View style={styles.footerRow}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => {
-          setEditorVisible(false);
-        }}
-        style={({ pressed }) => [
-          styles.secondaryButton,
-          {
-            backgroundColor: theme.colors.surfaceMuted,
-            borderColor: theme.colors.border,
-            borderRadius: theme.radius.pill,
-            opacity: pressed ? 0.76 : 1,
-          },
-        ]}>
-        <Text style={[styles.secondaryButtonLabel, { color: theme.colors.textSecondary }]}>
-          Cancel
-        </Text>
-      </Pressable>
-      <PrimaryButton
-        disabled={saveState === 'saving'}
-        label={saveState === 'saving' ? 'Saving...' : 'Save Defaults'}
-        onPress={() => {
-          handleSave(true);
-        }}
-        style={styles.primaryFooterButton}
-      />
-    </View>
-  );
-
   if (loadState === 'loading') {
-    return (
-      <Card title="Settings">
-        <Text style={[styles.copy, { color: theme.colors.textSecondary }]}>
-          Loading tracking defaults and tax presets.
-        </Text>
-      </Card>
-    );
+    return <Card description="Loading tracking defaults and tax presets." title="Settings" />;
   }
 
   if (loadState === 'error') {
     return (
       <Card title="Settings">
-        <Text style={[styles.copy, { color: theme.colors.danger }]}>
+        <Text tone="destructive" variant="bodyMuted">
           {loadError}
         </Text>
-        <PrimaryButton
-          label="Retry"
-          onPress={reload}
-          style={{ marginTop: theme.spacing.lg }}
-        />
+        <Button className="mt-4 self-start" label="Retry" onPress={reload} />
       </Card>
     );
   }
 
   return (
     <>
-      <Card title="Tracking">
-        <View>
-          <SettingsRow
+      <View className="gap-3">
+        <SectionHeader label="Tracking" title="Suggestions" />
+        <Card padding="compact" shadow="soft">
+          <SwitchRow
             detail="Show a prompt when you enter the gym geofence."
             label="Check-in suggestions"
-            trailing={
-              <Switch
-                onValueChange={value => {
-                  setFieldValue('checkinSuggestionsEnabled', value);
-                }}
-                thumbColor={theme.colors.surface}
-                trackColor={{
-                  false: theme.colors.border,
-                  true: theme.colors.accent,
-                }}
-                value={formValues.checkinSuggestionsEnabled}
-              />
-            }
+            onValueChange={value => {
+              setFieldValue('checkinSuggestionsEnabled', value);
+            }}
+            value={formValues.checkinSuggestionsEnabled}
           />
-          <SettingsRow
+          <SwitchRow
             detail="Suggest finishing a visit after you leave."
             label="Check-out suggestions"
             last
-            trailing={
-              <Switch
-                onValueChange={value => {
-                  setFieldValue('checkoutSuggestionsEnabled', value);
-                }}
-                thumbColor={theme.colors.surface}
-                trackColor={{
-                  false: theme.colors.border,
-                  true: theme.colors.accent,
-                }}
-                value={formValues.checkoutSuggestionsEnabled}
-              />
-            }
+            onValueChange={value => {
+              setFieldValue('checkoutSuggestionsEnabled', value);
+            }}
+            value={formValues.checkoutSuggestionsEnabled}
           />
-        </View>
-
-        <PrimaryButton
+        </Card>
+        <Button
+          className="self-start"
           disabled={saveState === 'saving'}
           label={saveState === 'saving' ? 'Saving...' : 'Save Tracking'}
           onPress={() => {
             handleSave(false);
           }}
-          style={{ marginTop: theme.spacing.lg }}
+          variant="secondary"
         />
+      </View>
 
-        {saveFeedback ? (
-          <Text
-            style={[
-              styles.feedback,
-              {
-                color:
-                  saveState === 'error'
-                    ? theme.colors.danger
-                    : theme.colors.accent,
-              },
-            ]}>
-            {saveFeedback}
-          </Text>
-        ) : null}
-      </Card>
-
-      <Card title="Tax defaults">
-        <View>
+      <View className="gap-3">
+        <SectionHeader label="Tax Defaults" title="Region defaults" />
+        <Card padding="compact" shadow="soft">
           <SettingsRow label="Currency" value={settings?.currency ?? formValues.currency} />
           <SettingsRow label="Locale" value={settings?.locale ?? formValues.locale} />
           <SettingsRow
@@ -183,51 +118,58 @@ export function AppSettingsSection() {
             last
             value={formatRatePercentage(settings?.defaultPstRate ?? formValues.defaultPstRate)}
           />
-        </View>
-
-        <View style={styles.sectionFooter}>
-          <Text style={[styles.meta, { color: theme.colors.textMuted }]}>
+        </Card>
+        <Row justify="between">
+          <Text tone="secondary" variant="bodyMuted">
             Region preset {settings?.regionPreset ?? 'BC_CA'}
           </Text>
-          <Pressable
-            accessibilityRole="button"
+          <Button
+            label="Edit Defaults"
             onPress={() => {
               setEditorVisible(true);
             }}
-            style={({ pressed }) => [{ opacity: pressed ? 0.76 : 1 }]}>
-            <Text style={[styles.inlineAction, { color: theme.colors.accent }]}>
-              Edit Defaults
-            </Text>
-          </Pressable>
-        </View>
-      </Card>
+            size="sm"
+            variant="ghost"
+          />
+        </Row>
+      </View>
 
-      <BottomSheet
-        footer={footer}
+      {saveFeedback ? (
+        <Text tone={saveState === 'error' ? 'destructive' : 'success'} variant="bodyMuted">
+          {saveFeedback}
+        </Text>
+      ) : null}
+
+      <BottomSheetFormShell
+        footer={
+          <Row className="gap-3">
+            <Button
+              className="flex-1"
+              label="Cancel"
+              onPress={() => {
+                setEditorVisible(false);
+              }}
+              variant="secondary"
+            />
+            <Button
+              className="flex-1"
+              disabled={saveState === 'saving'}
+              label={saveState === 'saving' ? 'Saving...' : 'Save Defaults'}
+              onPress={() => {
+                handleSave(true);
+              }}
+            />
+          </Row>
+        }
         onClose={() => {
           setEditorVisible(false);
         }}
         subtitle="Currency, locale, and tax defaults"
         title="Edit Defaults"
         visible={editorVisible}>
-        {saveFeedback ? (
-          <Text
-            style={[
-              styles.feedback,
-              {
-                color:
-                  saveState === 'error'
-                    ? theme.colors.danger
-                    : theme.colors.accent,
-              },
-            ]}>
-            {saveFeedback}
-          </Text>
-        ) : null}
-
-        <TextField
+        <Input
           autoCapitalize="characters"
-          errorMessage={findFieldMessage(errors, 'currency')}
+          errorText={findFieldMessage(errors, 'currency')}
           label="Currency"
           onChangeText={value => {
             setFieldValue('currency', value);
@@ -235,9 +177,9 @@ export function AppSettingsSection() {
           placeholder="CAD"
           value={formValues.currency}
         />
-        <TextField
+        <Input
           autoCapitalize="none"
-          errorMessage={findFieldMessage(errors, 'locale')}
+          errorText={findFieldMessage(errors, 'locale')}
           label="Locale"
           onChangeText={value => {
             setFieldValue('locale', value);
@@ -245,11 +187,11 @@ export function AppSettingsSection() {
           placeholder="en-CA"
           value={formValues.locale}
         />
-        <View style={styles.inlineFields}>
-          <View style={styles.inlineField}>
-            <TextField
+        <Row align="start" className="gap-3">
+          <View className="flex-1">
+            <Input
               autoCapitalize="none"
-              errorMessage={findFieldMessage(errors, 'defaultGstRate')}
+              errorText={findFieldMessage(errors, 'defaultGstRate')}
               keyboardType="decimal-pad"
               label="GST"
               onChangeText={value => {
@@ -259,10 +201,10 @@ export function AppSettingsSection() {
               value={formValues.defaultGstRate}
             />
           </View>
-          <View style={styles.inlineField}>
-            <TextField
+          <View className="flex-1">
+            <Input
               autoCapitalize="none"
-              errorMessage={findFieldMessage(errors, 'defaultPstRate')}
+              errorText={findFieldMessage(errors, 'defaultPstRate')}
               keyboardType="decimal-pad"
               label="PST"
               onChangeText={value => {
@@ -272,62 +214,8 @@ export function AppSettingsSection() {
               value={formValues.defaultPstRate}
             />
           </View>
-        </View>
-      </BottomSheet>
+        </Row>
+      </BottomSheetFormShell>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  copy: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  feedback: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 12,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  inlineAction: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  inlineField: {
-    flex: 1,
-  },
-  inlineFields: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  meta: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  primaryFooterButton: {
-    flex: 1,
-  },
-  secondaryButton: {
-    alignItems: 'center',
-    borderWidth: 1,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 44,
-    paddingHorizontal: 18,
-  },
-  secondaryButtonLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  sectionFooter: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-});

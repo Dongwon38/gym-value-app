@@ -1,63 +1,52 @@
 import type { TextStyle } from 'react-native';
 
+import { tokens } from '../../../design/tokens';
+
+type TypographyVariant = keyof typeof tokens.typography;
+
+function buildTextStyle(variant: TypographyVariant): TextStyle {
+  const definition = tokens.typography[variant];
+
+  return {
+    fontFamily: tokens.fontFamily.sans,
+    fontSize: definition.fontSize,
+    fontWeight: definition.fontWeight as TextStyle['fontWeight'],
+    letterSpacing: definition.letterSpacing,
+    lineHeight: definition.lineHeight,
+  };
+}
+
 export const appTheme = {
+  ...tokens,
   colors: {
-    background: '#F4F1EA',
-    surface: '#FFFCF5',
-    surfaceMuted: '#EFE7D9',
-    border: '#D9D0C2',
-    textPrimary: '#1F1A14',
-    textSecondary: '#4C4337',
-    textMuted: '#6F6455',
-    accent: '#2F6A5E',
-    accentPressed: '#25564C',
-    accentContrast: '#FFFDF8',
-    danger: '#A24438',
-    warning: '#8A611D',
-  },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    xxl: 28,
+    ...tokens.colors,
+    accent: tokens.colors.success,
+    accentContrast: '#FFFFFF',
+    accentPressed: tokens.colors.successPressed,
+    danger: tokens.colors.destructive,
+    surface: tokens.colors.card,
+    surfaceMuted: tokens.colors.mutedCard,
+    textMuted: tokens.colors.textTertiary,
   },
   radius: {
-    sm: 10,
-    md: 14,
-    lg: 20,
-    pill: 999,
+    ...tokens.radius,
+    pill: tokens.radius.full,
   },
-  typography: {
-    eyebrow: {
-      fontSize: 13,
-      fontWeight: '600',
-      letterSpacing: 0.8,
-      lineHeight: 18,
-      textTransform: 'uppercase',
-    } satisfies TextStyle,
-    title: {
-      fontSize: 26,
-      fontWeight: '700',
-      lineHeight: 32,
-    } satisfies TextStyle,
-    body: {
-      fontSize: 14,
-      fontWeight: '400',
-      lineHeight: 20,
-    } satisfies TextStyle,
-    button: {
-      fontSize: 15,
-      fontWeight: '600',
-      lineHeight: 18,
-    } satisfies TextStyle,
-    cardTitle: {
-      fontSize: 17,
-      fontWeight: '700',
-      lineHeight: 22,
-    } satisfies TextStyle,
+  spacing: {
+    ...tokens.spacing,
+    xs: tokens.spacing[1],
+    sm: tokens.spacing[2],
+    md: tokens.spacing[3],
+    lg: tokens.spacing[4],
+    xl: tokens.spacing[5],
+    xxl: tokens.spacing[7],
   },
-} as const;
+  typographyStyles: Object.fromEntries(
+    Object.keys(tokens.typography).map(key => [
+      key,
+      buildTextStyle(key as TypographyVariant),
+    ]),
+  ) as Record<TypographyVariant, TextStyle>,
+};
 
 export type AppTheme = typeof appTheme;

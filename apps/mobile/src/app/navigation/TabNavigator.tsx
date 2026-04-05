@@ -7,29 +7,20 @@ import { SettingsScreen } from '../../screens/settings/SettingsScreen';
 import { VisitsScreen } from '../../screens/visits/VisitsScreen';
 import { appTheme } from '../../ui/theme';
 import { MainTabParamList } from './navigationTypes';
+import { SoftTabBar } from './SoftTabBar';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
+const renderSoftTabBar = (props: Parameters<typeof SoftTabBar>[0]) => (
+  <SoftTabBar {...props} />
+);
 
 export function TabNavigator() {
   return (
     <Tab.Navigator
       initialRouteName="Home"
+      tabBar={renderSoftTabBar}
       screenOptions={{
-        headerShadowVisible: false,
-        headerStyle: {
-          backgroundColor: appTheme.colors.surface,
-        },
-        headerTitleStyle: {
-          color: appTheme.colors.textPrimary,
-          fontSize: 18,
-          fontWeight: '600',
-        },
-        tabBarActiveTintColor: appTheme.colors.accent,
-        tabBarInactiveTintColor: '#776B5B',
-        tabBarStyle: {
-          backgroundColor: appTheme.colors.surface,
-          borderTopColor: appTheme.colors.border,
-        },
+        headerShown: false,
         sceneStyle: {
           backgroundColor: appTheme.colors.background,
         },

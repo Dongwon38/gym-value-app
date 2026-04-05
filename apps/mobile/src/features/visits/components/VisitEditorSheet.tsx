@@ -1,10 +1,17 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import type { VisitFormStatus, VisitFormValues } from '../../../domain/forms';
 import type { ValidationIssue } from '../../../utils/validation';
-import { BottomSheet, PrimaryButton, TextField } from '../../../ui/components';
-import { useAppTheme } from '../../../ui/theme';
+import {
+  BottomSheetFormShell,
+  Button,
+  Card,
+  Input,
+  Row,
+  SegmentedControl,
+  Text,
+} from '../../../ui';
 import { formatVisitDurationLabel } from '../useCases/visitTimeline';
 
 type VisitEditorSheetProps = {
@@ -71,77 +78,13 @@ function SummaryRow({
   label: string;
   value: string;
 }) {
-  const theme = useAppTheme();
-
   return (
-    <View style={styles.summaryRow}>
-      <Text style={[styles.summaryLabel, { color: theme.colors.textMuted }]}>
+    <Row justify="between">
+      <Text tone="secondary" variant="bodyMuted">
         {label}
       </Text>
-      <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function StatusSegment({
-  onChange,
-  selectedStatus,
-}: {
-  onChange: (status: VisitFormStatus) => void;
-  selectedStatus: VisitFormStatus;
-}) {
-  const theme = useAppTheme();
-
-  return (
-    <View
-      style={[
-        styles.segmentedControl,
-        {
-          backgroundColor: theme.colors.surfaceMuted,
-          borderColor: theme.colors.border,
-          borderRadius: theme.radius.pill,
-        },
-      ]}>
-      {[
-        { label: 'Completed', value: 'completed' as const },
-        { label: 'Active', value: 'active' as const },
-      ].map(option => {
-        const isSelected = option.value === selectedStatus;
-
-        return (
-          <Pressable
-            key={option.value}
-            accessibilityRole="button"
-            onPress={() => {
-              onChange(option.value);
-            }}
-            style={({ pressed }) => [
-              styles.segmentOption,
-              {
-                backgroundColor: isSelected
-                  ? theme.colors.surface
-                  : 'transparent',
-                borderRadius: theme.radius.pill,
-                opacity: pressed ? 0.82 : 1,
-              },
-            ]}>
-            <Text
-              style={[
-                styles.segmentLabel,
-                {
-                  color: isSelected
-                    ? theme.colors.textPrimary
-                    : theme.colors.textSecondary,
-                },
-              ]}>
-              {option.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+      <Text variant="body">{value}</Text>
+    </Row>
   );
 }
 
@@ -163,38 +106,19 @@ export function VisitEditorSheet({
   visitSourceLabel,
   visible,
 }: VisitEditorSheetProps) {
-  const theme = useAppTheme();
-
-  const footer = (
-    <View style={styles.footerRow}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onClose}
-        style={({ pressed }) => [
-          styles.secondaryButton,
-          {
-            backgroundColor: theme.colors.surfaceMuted,
-            borderColor: theme.colors.border,
-            borderRadius: theme.radius.pill,
-            opacity: pressed ? 0.76 : 1,
-          },
-        ]}>
-        <Text style={[styles.secondaryButtonLabel, { color: theme.colors.textSecondary }]}>
-          Cancel
-        </Text>
-      </Pressable>
-      <PrimaryButton
-        disabled={saveState === 'saving'}
-        label={saveState === 'saving' ? 'Saving...' : 'Save'}
-        onPress={onSave}
-        style={styles.primaryFooterButton}
-      />
-    </View>
-  );
-
   return (
-    <BottomSheet
-      footer={footer}
+    <BottomSheetFormShell
+      footer={
+        <Row className="gap-3">
+          <Button className="flex-1" label="Cancel" onPress={onClose} variant="secondary" />
+          <Button
+            className="flex-1"
+            disabled={saveState === 'saving'}
+            label={saveState === 'saving' ? 'Saving...' : 'Save'}
+            onPress={onSave}
+          />
+        </Row>
+      }
       onClose={onClose}
       subtitle={
         hasPrimaryGym
@@ -204,41 +128,24 @@ export function VisitEditorSheet({
       title={editorMode === 'edit' ? 'Edit Visit' : 'Add Visit'}
       visible={visible}>
       {saveFeedback ? (
-        <Text
-          style={[
-            styles.feedback,
-            {
-              color:
-                saveState === 'error'
-                  ? theme.colors.danger
-                  : saveState === 'success'
-                    ? theme.colors.accent
-                    : theme.colors.textSecondary,
-            },
-          ]}>
+        <Text tone={saveState === 'error' ? 'destructive' : 'success'} variant="bodyMuted">
           {saveFeedback}
         </Text>
       ) : null}
 
-      <View
-        style={[
-          styles.summaryPanel,
-          {
-            backgroundColor: theme.colors.surfaceMuted,
-            borderColor: theme.colors.border,
-            borderRadius: theme.radius.md,
-          },
-        ]}>
-        <SummaryRow label="Date" value={formValues.date || '--'} />
-        <SummaryRow label="Time" value={formatSheetTimeRange(formValues)} />
-        <SummaryRow
-          label="Duration"
-          value={formatSheetDuration(derivedDurationMinutes, formValues.status)}
-        />
-        <SummaryRow label="Type" value={visitSourceLabel} />
-      </View>
+      <Card padding="compact" shadow="none" variant="muted">
+        <View className="gap-3">
+          <SummaryRow label="Date" value={formValues.date || '--'} />
+          <SummaryRow label="Time" value={formatSheetTimeRange(formValues)} />
+          <SummaryRow
+            label="Duration"
+            value={formatSheetDuration(derivedDurationMinutes, formValues.status)}
+          />
+          <SummaryRow label="Type" value={visitSourceLabel} />
+        </View>
+      </Card>
 
-      <StatusSegment
+      <SegmentedControl
         onChange={status => {
           onSetFieldValue('status', status);
 
@@ -246,26 +153,30 @@ export function VisitEditorSheet({
             onSetFieldValue('endedAt', '');
           }
         }}
-        selectedStatus={formValues.status}
+        options={[
+          { label: 'Completed', value: 'completed' as const },
+          { label: 'Active', value: 'active' as const },
+        ]}
+        value={formValues.status}
       />
 
-      <View style={styles.twoColumnRow}>
-        <View style={styles.flexField}>
-          <TextField
-            dense
-            errorMessage={getFieldError(validationErrors, 'date')}
+      <Row align="start" className="gap-3">
+        <View className="flex-1">
+          <Input
+            errorText={getFieldError(validationErrors, 'date')}
+            keyboardType="numbers-and-punctuation"
             label="Date"
             onChangeText={value => {
               onSetFieldValue('date', value);
             }}
-            placeholder="2026-04-03"
+            placeholder="2026-04-04"
             value={formValues.date}
           />
         </View>
-        <View style={styles.flexField}>
-          <TextField
-            dense
-            errorMessage={getFieldError(validationErrors, 'startedAt')}
+        <View className="flex-1">
+          <Input
+            errorText={getFieldError(validationErrors, 'startedAt')}
+            keyboardType="numbers-and-punctuation"
             label="Start"
             onChangeText={value => {
               onSetFieldValue('startedAt', value);
@@ -274,132 +185,32 @@ export function VisitEditorSheet({
             value={formValues.startedAt}
           />
         </View>
-      </View>
+      </Row>
 
-      {formValues.status === 'completed' ? (
-        <TextField
-          dense
-          errorMessage={getFieldError(validationErrors, 'endedAt')}
-          label="End"
-          onChangeText={value => {
-            onSetFieldValue('endedAt', value);
-          }}
-          placeholder="19:25"
-          value={formValues.endedAt}
-        />
-      ) : null}
-
-      <TextField
-        dense
-        label="Notes"
-        multiline
+      <Input
+        editable={formValues.status !== 'active'}
+        errorText={getFieldError(validationErrors, 'endedAt')}
+        keyboardType="numbers-and-punctuation"
+        label="End"
         onChangeText={value => {
-          onSetFieldValue('notes', value);
+          onSetFieldValue('endedAt', value);
         }}
-        placeholder="Optional"
-        value={formValues.notes}
+        placeholder={formValues.status === 'active' ? 'Disabled while active' : '19:25'}
+        value={formValues.endedAt}
       />
 
+      <Card padding="compact" shadow="none" variant="muted">
+        <SummaryRow label="Type" value={visitSourceLabel} />
+      </Card>
+
       {onDelete ? (
-        <Pressable
-          accessibilityRole="button"
+        <Button
           disabled={deleteDisabled}
+          label={deleteDisabled ? 'Working...' : deleteLabel}
           onPress={onDelete}
-          style={({ pressed }) => [
-            styles.deleteButton,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radius.pill,
-              opacity: deleteDisabled ? 0.5 : pressed ? 0.76 : 1,
-            },
-          ]}>
-          <Text style={[styles.deleteButtonLabel, { color: theme.colors.danger }]}>
-            {deleteLabel}
-          </Text>
-        </Pressable>
+          variant="destructive"
+        />
       ) : null}
-    </BottomSheet>
+    </BottomSheetFormShell>
   );
 }
-
-const styles = StyleSheet.create({
-  deleteButton: {
-    alignItems: 'center',
-    borderWidth: 1,
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-  },
-  deleteButtonLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  feedback: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  flexField: {
-    flex: 1,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  primaryFooterButton: {
-    flex: 1,
-  },
-  secondaryButton: {
-    alignItems: 'center',
-    borderWidth: 1,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 44,
-    paddingHorizontal: 18,
-  },
-  secondaryButtonLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  segmentedControl: {
-    borderWidth: 1,
-    flexDirection: 'row',
-    padding: 4,
-  },
-  segmentLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  segmentOption: {
-    alignItems: 'center',
-    flex: 1,
-    minHeight: 40,
-    justifyContent: 'center',
-  },
-  summaryLabel: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  summaryPanel: {
-    borderWidth: 1,
-    padding: 16,
-  },
-  summaryRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    minHeight: 24,
-  },
-  summaryValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  twoColumnRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-});

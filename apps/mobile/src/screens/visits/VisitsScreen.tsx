@@ -1,7 +1,9 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { PencilLine, Plus } from 'lucide-react-native';
 
 import type { MainTabParamList } from '../../app/navigation/navigationTypes';
 import type { Visit } from '../../domain/models';
@@ -14,7 +16,6 @@ import {
   filterVisitsByPeriod,
   formatVisitDateBadge,
   formatVisitFeedMeta,
-  formatVisitStatusLabel,
   formatVisitSourceTypeLabel,
   formatVisitSummaryLine,
   formatVisitTimeRange,
@@ -23,8 +24,18 @@ import {
   type VisitPeriod,
 } from '../../features/visits/useCases/visitTimeline';
 import { shouldReviewActiveVisit } from '../../features/visits/useCases/sessionReview';
-import { Card, EmptyState, PrimaryButton, ScreenContainer } from '../../ui/components';
-import { useAppTheme } from '../../ui/theme';
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  IconButton,
+  Row,
+  Screen,
+  SegmentedControl,
+  Text,
+} from '../../ui';
+import { appTheme } from '../../ui/theme';
 
 type CancelState = 'idle' | 'saving' | 'success' | 'error';
 type FeedbackTone = 'danger' | 'success';
@@ -39,7 +50,6 @@ const periodOptions: Array<{
 ];
 
 export function VisitsScreen() {
-  const theme = useAppTheme();
   const isFocused = useIsFocused();
   const previousFocusRef = React.useRef<boolean | null>(null);
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
@@ -97,34 +107,6 @@ export function VisitsScreen() {
   const needsActiveVisitReview =
     activeVisit !== null ? shouldReviewActiveVisit(activeVisit) : false;
 
-  const headerAction = (
-    <Pressable
-      accessibilityLabel="Add visit"
-      accessibilityRole="button"
-      onPress={() => {
-        setFeedback(null);
-
-        if (!hasPrimaryGym) {
-          navigation.navigate('Settings');
-          return;
-        }
-
-        startCreate();
-      }}
-      style={({ pressed }) => [
-        styles.circleButton,
-        {
-          backgroundColor: theme.colors.accent,
-          borderRadius: theme.radius.pill,
-          opacity: pressed ? 0.82 : 1,
-        },
-      ]}>
-      <Text style={[styles.circleButtonLabel, { color: theme.colors.accentContrast }]}>
-        +
-      </Text>
-    </Pressable>
-  );
-
   async function handleCancelVisit(visit: Visit) {
     setCancelState('saving');
     setFeedback(null);
@@ -158,107 +140,71 @@ export function VisitsScreen() {
   }
 
   return (
-    <ScreenContainer
-      headerAction={headerAction}
-      eyebrow="Visits"
+    <Screen
+      headerAction={
+        <IconButton
+          accessibilityLabel="Add visit"
+          onPress={() => {
+            setFeedback(null);
+
+            if (!hasPrimaryGym) {
+              navigation.navigate('Settings');
+              return;
+            }
+
+            startCreate();
+          }}>
+          <Plus color="#FFFFFF" size={18} strokeWidth={2.5} />
+        </IconButton>
+      }
       scroll
-      showEyebrow={false}
       title="Visits">
       {loadState === 'loading' ? (
-        <Card title="Loading visits">
-          <Text style={[styles.supportText, { color: theme.colors.textSecondary }]}>
-            Rebuilding the local visit timeline.
-          </Text>
-        </Card>
+        <Card description="Rebuilding the local visit timeline." title="Loading visits" />
       ) : null}
 
       {loadState === 'error' ? (
         <Card title="Visit timeline needs attention">
-          <Text style={[styles.supportText, { color: theme.colors.danger }]}>
+          <Text tone="destructive" variant="bodyMuted">
             {loadError ?? 'Unknown visit list query error.'}
           </Text>
-          <PrimaryButton
-            label="Retry"
-            onPress={reload}
-            style={{ marginTop: theme.spacing.lg }}
-          />
+          <Button className="mt-4 self-start" label="Retry" onPress={reload} />
         </Card>
       ) : null}
 
       {loadState === 'ready' ? (
         <>
-          <View
-            style={[
-              styles.segmentedControl,
-              {
-                backgroundColor: theme.colors.surfaceMuted,
-                borderColor: theme.colors.border,
-                borderRadius: theme.radius.pill,
-              },
-            ]}>
-            {periodOptions.map(option => {
-              const isSelected = option.value === selectedPeriod;
+          <Animated.View entering={FadeInDown.delay(20).duration(220)}>
+            <SegmentedControl
+              onChange={setSelectedPeriod}
+              options={periodOptions}
+              value={selectedPeriod}
+            />
+          </Animated.View>
 
-              return (
-                <Pressable
-                  key={option.value}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    setSelectedPeriod(option.value);
-                  }}
-                  style={({ pressed }) => [
-                    styles.segmentOption,
-                    {
-                      backgroundColor: isSelected
-                        ? theme.colors.surface
-                        : 'transparent',
-                      borderRadius: theme.radius.pill,
-                      opacity: pressed ? 0.82 : 1,
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.segmentLabel,
-                      {
-                        color: isSelected
-                          ? theme.colors.textPrimary
-                          : theme.colors.textSecondary,
-                      },
-                    ]}>
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <Animated.View entering={FadeInDown.delay(50).duration(220)}>
+            <Card padding="compact" shadow="soft">
+              <VisitHeatmap heatmap={heatmap} />
+            </Card>
+          </Animated.View>
 
-          <Card style={styles.heatmapCard}>
-            <VisitHeatmap heatmap={heatmap} />
-          </Card>
-
-          <Text style={[styles.summaryLine, { color: theme.colors.textMuted }]}>
+          <Text className="-mt-1" tone="secondary" variant="bodyMuted">
             {formatVisitSummaryLine(visits, filteredVisits, selectedPeriod)}
           </Text>
 
           {feedback ? (
             <Text
-              style={[
-                styles.feedback,
-                {
-                  color:
-                    feedback.tone === 'danger'
-                      ? theme.colors.danger
-                      : theme.colors.accent,
-                },
-              ]}>
+              tone={feedback.tone === 'danger' ? 'destructive' : 'success'}
+              variant="bodyMuted">
               {feedback.message}
             </Text>
           ) : null}
 
           {activeVisit && needsActiveVisitReview ? (
             <Card title="Review active visit">
-              <Text style={[styles.supportText, { color: theme.colors.warning }]}>
-                The current active visit has been running for a while. Finish or cancel it to keep duration and KPI stats accurate.
+              <Text tone="warning" variant="bodyMuted">
+                The current active visit has been running for a while. Finish or cancel it to
+                keep duration and KPI stats accurate.
               </Text>
             </Card>
           ) : null}
@@ -304,77 +250,48 @@ export function VisitsScreen() {
           ) : null}
 
           {filteredVisits.length > 0 ? (
-            <View style={styles.visitList}>
+            <Animated.View className="gap-3" entering={FadeInDown.delay(80).duration(220)}>
               {filteredVisits.map(visit => (
                 <Pressable
                   key={visit.id}
-                  accessibilityRole="button"
+                  className="active:opacity-90"
                   onPress={() => {
                     setFeedback(null);
                     startEdit(visit);
-                  }}
-                  style={({ pressed }) => [
-                    styles.visitRow,
-                    {
-                      backgroundColor: theme.colors.surface,
-                      borderColor:
-                        visit.status === 'active'
-                          ? theme.colors.accent
-                          : theme.colors.border,
-                      borderRadius: theme.radius.md,
-                      opacity: pressed ? 0.88 : 1,
-                    },
-                  ]}>
-                  <View
-                    style={[
-                      styles.dateBadge,
-                      {
-                        backgroundColor:
-                          visit.status === 'active'
-                            ? theme.colors.surfaceMuted
-                            : theme.colors.background,
-                        borderRadius: theme.radius.sm,
-                      },
-                    ]}>
-                    <Text style={[styles.dateBadgeLabel, { color: theme.colors.textMuted }]}>
-                      {formatVisitDateBadge(visit)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.visitMeta}>
-                    <Text style={[styles.visitTime, { color: theme.colors.textPrimary }]}>
-                      {formatVisitTimeRange(visit)}
-                    </Text>
-                    <Text
-                      style={[styles.visitSubtitle, { color: theme.colors.textMuted }]}>
-                      {formatVisitFeedMeta(visit)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.trailingMeta}>
-                    <Text
-                      style={[
-                        styles.statusPill,
-                        {
-                          backgroundColor:
-                            visit.status === 'active'
-                              ? theme.colors.surfaceMuted
-                              : theme.colors.background,
-                          color:
-                            visit.status === 'active'
-                              ? theme.colors.accent
-                              : theme.colors.textMuted,
-                        },
-                      ]}>
-                      {formatVisitStatusLabel(visit.status)}
-                    </Text>
-                    <Text style={[styles.editHint, { color: theme.colors.textMuted }]}>
-                      Edit
-                    </Text>
-                  </View>
+                  }}>
+                  <Card
+                    className={visit.status === 'active' ? 'border-success/60' : ''}
+                    padding="compact"
+                    shadow="soft">
+                    <Row className="gap-3" justify="between">
+                      <Row align="center" className="flex-1 gap-3">
+                        <View className="min-w-[48px]">
+                          <Text className="text-center" tone="tertiary" variant="listMeta">
+                            {formatVisitDateBadge(visit)}
+                          </Text>
+                        </View>
+                        <View className="flex-1 gap-0.5">
+                          <Text variant="listTitle">{formatVisitTimeRange(visit)}</Text>
+                          <Text tone="secondary" variant="listMeta">
+                            {formatVisitFeedMeta(visit)}
+                          </Text>
+                        </View>
+                      </Row>
+                      <View className="items-end gap-2">
+                        {visit.status === 'active' ? (
+                          <Badge label="Active" tone="success" />
+                        ) : null}
+                        <PencilLine
+                          color={appTheme.colors.iconMuted}
+                          size={16}
+                          strokeWidth={2}
+                        />
+                      </View>
+                    </Row>
+                  </Card>
                 </Pressable>
               ))}
-            </View>
+            </Animated.View>
           ) : null}
         </>
       ) : null}
@@ -415,7 +332,7 @@ export function VisitsScreen() {
         visitSourceLabel={formatVisitSourceTypeLabel(editingVisit?.source ?? 'manual')}
         visible={editorMode !== 'closed'}
       />
-    </ScreenContainer>
+    </Screen>
   );
 }
 
@@ -424,237 +341,85 @@ function VisitHeatmap({
 }: {
   heatmap: ReturnType<typeof buildVisitHeatmap>;
 }) {
-  const theme = useAppTheme();
-
   return (
-    <View>
-      <View style={styles.heatmapHeader}>
-        <View style={styles.heatmapWeekdaySpacer} />
+    <View className="gap-3">
+      <Row className="pl-6 pr-1">
         {heatmap.weeks.map((week, index) => (
-          <View key={`${week.label ?? 'week'}_${index}`} style={styles.heatmapWeek}>
-            <Text style={[styles.heatmapMonthLabel, { color: theme.colors.textMuted }]}>
+          <View key={`${week.label ?? 'week'}_${index}`} className="flex-1 items-center">
+            <Text tone="tertiary" variant="listMeta">
               {week.label ?? ' '}
             </Text>
           </View>
         ))}
-      </View>
+      </Row>
 
-      <View style={styles.heatmapRows}>
-        <View style={styles.heatmapWeekdayColumn}>
+      <Row align="end" className="gap-2">
+        <View className="gap-[6px] pb-[1px]">
           {heatmap.weekdayLabels.map((label, index) => (
-            <Text
-              key={`${label}_${index}`}
-              style={[styles.heatmapWeekdayLabel, { color: theme.colors.textMuted }]}>
+            <Text key={`${label}_${index}`} tone="tertiary" variant="listMeta">
               {label || ' '}
             </Text>
           ))}
         </View>
 
-        <View style={styles.heatmapWeeksRow}>
+        <Row className="flex-1 gap-[6px]">
           {heatmap.weeks.map((week, index) => (
-            <View key={`visit_week_${index}`} style={styles.heatmapWeek}>
+            <View key={`visit_week_${index}`} className="flex-1 gap-[6px]">
               {week.days.map(day => (
                 <View
                   key={day.dateKey}
-                  style={[
-                    styles.heatmapCell,
-                    {
-                      backgroundColor: getHeatmapCellColor(day.level, theme),
-                      borderColor:
-                        day.level === 0
-                          ? theme.colors.border
-                          : getHeatmapCellBorderColor(day.level, theme),
-                    },
-                    day.isFuture || day.isMuted ? styles.heatmapCellDimmed : null,
-                  ]}
+                  className="h-3.5 rounded-[4px] border"
+                  style={getHeatmapCellStyle(day)}
                 />
               ))}
             </View>
           ))}
-        </View>
-      </View>
+        </Row>
+      </Row>
     </View>
   );
 }
 
-function getHeatmapCellColor(
-  level: 0 | 1 | 2 | 3,
-  theme: ReturnType<typeof useAppTheme>,
-) {
+function getHeatmapCellColor(level: 0 | 1 | 2 | 3) {
   if (level === 0) {
-    return theme.colors.background;
+    return '#F0EEE8';
   }
 
   if (level === 1) {
-    return '#DCEEE8';
+    return '#DDEFE2';
   }
 
   if (level === 2) {
-    return '#B7DFD1';
+    return '#C5E6D0';
   }
 
-  return '#82BEAA';
+  return '#A5D4B6';
 }
 
-function getHeatmapCellBorderColor(
-  level: 0 | 1 | 2 | 3,
-  theme: ReturnType<typeof useAppTheme>,
-) {
+function getHeatmapCellBorderColor(level: 0 | 1 | 2 | 3) {
   if (level === 0) {
-    return theme.colors.border;
+    return '#E3DED5';
   }
 
   if (level === 1) {
-    return '#C7E3D9';
+    return '#D6EAD8';
   }
 
   if (level === 2) {
-    return '#A3D1C1';
+    return '#BCDEC8';
   }
 
-  return '#6EA993';
+  return '#9CCAAD';
 }
 
-const styles = StyleSheet.create({
-  circleButton: {
-    alignItems: 'center',
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  circleButtonLabel: {
-    fontSize: 28,
-    fontWeight: '400',
-    lineHeight: 30,
-    marginTop: -1,
-  },
-  dateBadge: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 38,
-    minWidth: 54,
-    paddingHorizontal: 10,
-  },
-  dateBadgeLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 16,
-  },
-  editHint: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  feedback: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: -2,
-  },
-  heatmapCard: {
-    paddingTop: 14,
-  },
-  heatmapCell: {
-    borderWidth: 1,
-    borderRadius: 4,
-    height: 14,
-    width: 14,
-  },
-  heatmapCellDimmed: {
-    opacity: 0.45,
-  },
-  heatmapHeader: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  heatmapMonthLabel: {
-    fontSize: 11,
-    lineHeight: 14,
-    textAlign: 'center',
-  },
-  heatmapRows: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  heatmapWeek: {
-    gap: 5,
-  },
-  heatmapWeekdayColumn: {
-    gap: 5,
-    justifyContent: 'flex-end',
-    paddingTop: 19,
-  },
-  heatmapWeekdayLabel: {
-    fontSize: 10,
-    lineHeight: 14,
-    textAlign: 'center',
-    width: 10,
-  },
-  heatmapWeekdaySpacer: {
-    width: 18,
-  },
-  heatmapWeeksRow: {
-    flexDirection: 'row',
-    gap: 5,
-  },
-  segmentedControl: {
-    borderWidth: 1,
-    flexDirection: 'row',
-    padding: 4,
-  },
-  segmentLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  segmentOption: {
-    alignItems: 'center',
-    flex: 1,
-    minHeight: 36,
-    justifyContent: 'center',
-  },
-  statusPill: {
-    fontSize: 12,
-    fontWeight: '600',
-    lineHeight: 16,
-    overflow: 'hidden',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    textAlign: 'center',
-  },
-  summaryLine: {
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  supportText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  trailingMeta: {
-    alignItems: 'flex-end',
-    gap: 10,
-  },
-  visitList: {
-    gap: 12,
-  },
-  visitMeta: {
-    flex: 1,
-    gap: 4,
-  },
-  visitRow: {
-    alignItems: 'center',
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 12,
-    minHeight: 84,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  visitSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  visitTime: {
-    fontSize: 24,
-    fontWeight: '700',
-    lineHeight: 28,
-  },
-});
+function getHeatmapCellStyle(day: {
+  isFuture: boolean;
+  isMuted: boolean;
+  level: 0 | 1 | 2 | 3;
+}) {
+  return {
+    backgroundColor: getHeatmapCellColor(day.level),
+    borderColor: getHeatmapCellBorderColor(day.level),
+    opacity: day.isFuture || day.isMuted ? 0.42 : 1,
+  };
+}

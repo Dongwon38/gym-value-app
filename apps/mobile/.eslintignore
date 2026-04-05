@@ -1,0 +1,10 @@
+.eslintrc.js
+babel.config.js
+design/
+global.css
+index.js
+jest.config.js
+jest.setup.js
+metro.config.js
+nativewind-env.d.ts
+tailwind.config.js

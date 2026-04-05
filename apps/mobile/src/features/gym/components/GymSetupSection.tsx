@@ -1,10 +1,17 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
 
-import { BottomSheet, Card, PrimaryButton, TextField } from '../../../ui/components';
-import { useAppTheme } from '../../../ui/theme';
 import { useGymSetupForm } from '../hooks/useGymSetupForm';
-import { SettingsRow } from '../../settings/components/SettingsRow';
+import {
+  BottomSheetFormShell,
+  Button,
+  Card,
+  Input,
+  Row,
+  SectionHeader,
+  SettingsRow,
+  Text,
+} from '../../../ui';
 
 function findFieldMessage(
   issues: Array<{ field: string; message: string }>,
@@ -22,7 +29,6 @@ function formatCoordinateLabel(latitude?: number, longitude?: number) {
 }
 
 export function GymSetupSection() {
-  const theme = useAppTheme();
   const [editorVisible, setEditorVisible] = React.useState(false);
   const {
     errors,
@@ -47,64 +53,26 @@ export function GymSetupSection() {
     }
   }
 
-  const footer = (
-    <View style={styles.footerRow}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => {
-          setEditorVisible(false);
-        }}
-        style={({ pressed }) => [
-          styles.secondaryButton,
-          {
-            backgroundColor: theme.colors.surfaceMuted,
-            borderColor: theme.colors.border,
-            borderRadius: theme.radius.pill,
-            opacity: pressed ? 0.76 : 1,
-          },
-        ]}>
-        <Text style={[styles.secondaryButtonLabel, { color: theme.colors.textSecondary }]}>
-          Cancel
-        </Text>
-      </Pressable>
-      <PrimaryButton
-        disabled={saveState === 'saving'}
-        label={saveState === 'saving' ? 'Saving...' : mode === 'edit' ? 'Save Gym' : 'Create Gym'}
-        onPress={handleSave}
-        style={styles.primaryFooterButton}
-      />
-    </View>
-  );
-
   if (loadState === 'loading') {
-    return (
-      <Card title="Gym">
-        <Text style={[styles.copy, { color: theme.colors.textSecondary }]}>
-          Loading primary gym details.
-        </Text>
-      </Card>
-    );
+    return <Card description="Loading primary gym details." title="Gym" />;
   }
 
   if (loadState === 'error') {
     return (
       <Card title="Gym">
-        <Text style={[styles.copy, { color: theme.colors.danger }]}>
+        <Text tone="destructive" variant="bodyMuted">
           {loadError}
         </Text>
-        <PrimaryButton
-          label="Retry"
-          onPress={reload}
-          style={{ marginTop: theme.spacing.lg }}
-        />
+        <Button className="mt-4 self-start" label="Retry" onPress={reload} />
       </Card>
     );
   }
 
   return (
     <>
-      <Card title="Gym">
-        <View>
+      <View className="gap-3">
+        <SectionHeader label="Gym" title="Primary gym" />
+        <Card padding="compact" shadow="soft">
           <SettingsRow label="Name" value={primaryGym?.name ?? 'Not set'} />
           <SettingsRow
             label="Location"
@@ -119,51 +87,60 @@ export function GymSetupSection() {
             last
             value={primaryGym?.timezone ?? 'Not set'}
           />
-        </View>
+        </Card>
 
-        <View style={styles.sectionFooter}>
-          <Text style={[styles.meta, { color: theme.colors.textMuted }]}>
-            Manual coordinates only for now
-          </Text>
-          <Pressable
-            accessibilityRole="button"
+        <Row className="gap-3">
+          <Button
+            className="flex-1"
+            label={mode === 'edit' ? 'Edit Gym' : 'Set Up Gym'}
             onPress={() => {
               setEditorVisible(true);
             }}
-            style={({ pressed }) => [{ opacity: pressed ? 0.76 : 1 }]}>
-            <Text style={[styles.inlineAction, { color: theme.colors.accent }]}>
-              {mode === 'edit' ? 'Edit Gym' : 'Set Up Gym'}
-            </Text>
-          </Pressable>
-        </View>
+            variant="secondary"
+          />
+        </Row>
 
         {saveFeedback ? (
-          <Text
-            style={[
-              styles.feedback,
-              {
-                color:
-                  saveState === 'error'
-                    ? theme.colors.danger
-                    : theme.colors.accent,
-              },
-            ]}>
+          <Text tone={saveState === 'error' ? 'destructive' : 'success'} variant="bodyMuted">
             {saveFeedback}
           </Text>
         ) : null}
-      </Card>
+      </View>
 
-      <BottomSheet
-        footer={footer}
+      <BottomSheetFormShell
+        footer={
+          <Row className="gap-3">
+            <Button
+              className="flex-1"
+              label="Cancel"
+              onPress={() => {
+                setEditorVisible(false);
+              }}
+              variant="secondary"
+            />
+            <Button
+              className="flex-1"
+              disabled={saveState === 'saving'}
+              label={
+                saveState === 'saving'
+                  ? 'Saving...'
+                  : mode === 'edit'
+                    ? 'Save Gym'
+                    : 'Create Gym'
+              }
+              onPress={handleSave}
+            />
+          </Row>
+        }
         onClose={() => {
           setEditorVisible(false);
         }}
         subtitle="Manual coordinates, radius, and timezone"
         title={mode === 'edit' ? 'Edit Gym' : 'Set Up Gym'}
         visible={editorVisible}>
-        <TextField
+        <Input
           autoCapitalize="words"
-          errorMessage={findFieldMessage(errors, 'name')}
+          errorText={findFieldMessage(errors, 'name')}
           label="Name"
           onChangeText={value => {
             setFieldValue('name', value);
@@ -171,11 +148,12 @@ export function GymSetupSection() {
           placeholder="Downtown Fitness Club"
           value={formValues.name}
         />
-        <View style={styles.inlineFields}>
-          <View style={styles.inlineField}>
-            <TextField
+
+        <Row align="start" className="gap-3">
+          <View className="flex-1">
+            <Input
               autoCapitalize="none"
-              errorMessage={findFieldMessage(errors, 'latitude')}
+              errorText={findFieldMessage(errors, 'latitude')}
               keyboardType="decimal-pad"
               label="Latitude"
               onChangeText={value => {
@@ -185,10 +163,10 @@ export function GymSetupSection() {
               value={formValues.latitude}
             />
           </View>
-          <View style={styles.inlineField}>
-            <TextField
+          <View className="flex-1">
+            <Input
               autoCapitalize="none"
-              errorMessage={findFieldMessage(errors, 'longitude')}
+              errorText={findFieldMessage(errors, 'longitude')}
               keyboardType="decimal-pad"
               label="Longitude"
               onChangeText={value => {
@@ -198,12 +176,13 @@ export function GymSetupSection() {
               value={formValues.longitude}
             />
           </View>
-        </View>
-        <View style={styles.inlineFields}>
-          <View style={styles.inlineField}>
-            <TextField
+        </Row>
+
+        <Row align="start" className="gap-3">
+          <View className="flex-1">
+            <Input
               autoCapitalize="none"
-              errorMessage={findFieldMessage(errors, 'radiusMeters')}
+              errorText={findFieldMessage(errors, 'radiusMeters')}
               keyboardType="number-pad"
               label="Radius"
               onChangeText={value => {
@@ -213,10 +192,10 @@ export function GymSetupSection() {
               value={formValues.radiusMeters}
             />
           </View>
-          <View style={styles.inlineField}>
-            <TextField
+          <View className="flex-1">
+            <Input
               autoCapitalize="none"
-              errorMessage={findFieldMessage(errors, 'timezone')}
+              errorText={findFieldMessage(errors, 'timezone')}
               label="Timezone"
               onChangeText={value => {
                 setFieldValue('timezone', value);
@@ -225,109 +204,26 @@ export function GymSetupSection() {
               value={formValues.timezone}
             />
           </View>
-        </View>
+        </Row>
 
         {warnings.length > 0 ? (
-          <View
-            style={[
-              styles.warningBox,
-              {
-                borderColor: theme.colors.border,
-                borderRadius: theme.radius.md,
-              },
-              styles.warningBoxFill,
-            ]}>
-            {warnings.map(issue => (
-              <Text
-                key={issue.code}
-                style={[styles.warning, { color: theme.colors.warning }]}>
-                {issue.message}
-              </Text>
-            ))}
-          </View>
+          <Card className="bg-warning-soft" padding="compact" shadow="none" variant="quiet">
+            <View className="gap-2">
+              {warnings.map(issue => (
+                <Text key={issue.code} tone="warning" variant="bodyMuted">
+                  {issue.message}
+                </Text>
+              ))}
+            </View>
+          </Card>
         ) : null}
 
         {saveFeedback ? (
-          <Text
-            style={[
-              styles.feedback,
-              {
-                color:
-                  saveState === 'error'
-                    ? theme.colors.danger
-                    : theme.colors.accent,
-              },
-            ]}>
+          <Text tone={saveState === 'error' ? 'destructive' : 'success'} variant="bodyMuted">
             {saveFeedback}
           </Text>
         ) : null}
-      </BottomSheet>
+      </BottomSheetFormShell>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  copy: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  feedback: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 12,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  inlineAction: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  inlineField: {
-    flex: 1,
-  },
-  inlineFields: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  meta: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  primaryFooterButton: {
-    flex: 1,
-  },
-  secondaryButton: {
-    alignItems: 'center',
-    borderWidth: 1,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 44,
-    paddingHorizontal: 18,
-  },
-  secondaryButtonLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  sectionFooter: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  warning: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  warningBox: {
-    borderWidth: 1,
-    gap: 8,
-    padding: 14,
-  },
-  warningBoxFill: {
-    backgroundColor: '#F3E6CF',
-  },
-});
