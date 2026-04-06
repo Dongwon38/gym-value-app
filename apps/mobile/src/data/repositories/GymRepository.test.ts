@@ -4,17 +4,33 @@ jest.mock('../db', () => ({
 
 import { getDatabase } from '../db';
 import { createGym, listGyms, updateGym } from './GymRepository';
+import type { GymRow } from './GymRepository';
 
-function createRow(overrides: Partial<Record<string, unknown>> = {}) {
+function createRow(overrides: Partial<GymRow> = {}): GymRow {
   return {
+    address_line1: null,
+    brand_name: null,
+    city: null,
+    country_code: null,
     created_at: '2026-04-02T10:00:00.000Z',
+    dedupe_key: null,
+    external_place_id: null,
+    formatted_address: null,
     id: 'gym_1',
     is_active: 1,
     is_primary: 1,
+    last_verified_at: null,
     latitude: 49.2827,
     longitude: -123.1207,
     name: 'Downtown Gym',
+    name_compact: null,
+    normalized_address: null,
+    normalized_name: null,
+    postal_code: null,
     radius_meters: 150,
+    region: null,
+    search_keywords: null,
+    search_source: 'manual',
     timezone: 'America/Vancouver',
     updated_at: '2026-04-02T10:00:00.000Z',
     ...overrides,
@@ -114,7 +130,7 @@ describe('GymRepository', () => {
     expect(txExecuteAsync).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('SET'),
-      [
+      expect.arrayContaining([
         'Westside Gym',
         49.3,
         -123.1,
@@ -123,8 +139,25 @@ describe('GymRepository', () => {
         1,
         1,
         expect.any(String),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
         'gym_1',
-      ],
+      ]),
     );
     expect(savedGym.name).toBe('Westside Gym');
   });

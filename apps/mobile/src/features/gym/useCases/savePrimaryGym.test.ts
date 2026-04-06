@@ -34,6 +34,7 @@ describe('savePrimaryGym', () => {
       longitude: -123.1207,
       name: 'Downtown Gym',
       radiusMeters: 151,
+      searchSource: 'manual',
       timezone: 'America/Vancouver',
     });
   });
@@ -50,9 +51,13 @@ describe('savePrimaryGym', () => {
       timezone: 'America/Vancouver',
     }, 'gym_1');
 
-    expect(updateGym).toHaveBeenCalledWith('gym_1', expect.objectContaining({
-      name: 'Downtown Gym',
-    }));
+    expect(updateGym).toHaveBeenCalledWith(
+      'gym_1',
+      expect.objectContaining({
+        name: 'Downtown Gym',
+        searchSource: 'manual',
+      }),
+    );
   });
 
   it('throws a validation error when the gym form is invalid', async () => {

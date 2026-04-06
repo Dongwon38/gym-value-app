@@ -8,6 +8,7 @@ import { mapGymToFormValues, mapGymRowToModel, getPrimaryGym } from './primaryGy
 describe('primary gym read path', () => {
   afterEach(() => {
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('maps a SQLite gym row into the app model and form values', () => {
@@ -42,6 +43,28 @@ describe('primary gym read path', () => {
       longitude: '-123.1207',
       name: 'Downtown Gym',
       radiusMeters: '150',
+      timezone: 'America/Vancouver',
+    });
+  });
+
+  it('maps null gym to empty form with device IANA timezone default', () => {
+    jest.spyOn(Intl, 'DateTimeFormat').mockImplementation(
+      () =>
+        ({
+          resolvedOptions: () => ({
+            calendar: 'gregory',
+            locale: 'en-CA',
+            numberingSystem: 'latn',
+            timeZone: 'America/Vancouver',
+          }),
+        }) as Intl.DateTimeFormat,
+    );
+
+    expect(mapGymToFormValues(null)).toEqual({
+      latitude: '',
+      longitude: '',
+      name: '',
+      radiusMeters: '',
       timezone: 'America/Vancouver',
     });
   });

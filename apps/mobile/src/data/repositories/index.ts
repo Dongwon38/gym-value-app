@@ -1,11 +1,27 @@
 export {
   createGym,
+  findGymByDedupeKey,
+  findGymByExternalPlaceId,
   getPrimaryGym,
   listGyms,
   mapGymRowToModel,
+  searchGymsLocalCandidates,
   updateGym,
 } from './GymRepository';
 export type { GymRow, GymWriteInput } from './GymRepository';
+export {
+  appendGymSearchLog,
+} from './GymSearchLogRepository';
+export {
+  deleteExpiredGymSearchCache,
+  getCachedPlacesSearchResults,
+  setCachedPlacesSearchResults,
+} from './GymSearchCacheRepository';
+export {
+  getPlacesSearchQuotaForDate,
+  getPlacesSearchUsageForDate,
+  incrementPlacesSearchUsageForDate,
+} from './PlacesSearchUsageRepository';
 export {
   getSettings,
   mapAppSettingsRowToModel,

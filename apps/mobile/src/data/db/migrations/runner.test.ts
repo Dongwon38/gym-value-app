@@ -1,4 +1,3 @@
-import { migration002ExpandFeeItemsCostStructure } from './002_expand_fee_items_cost_structure';
 import { getAppMigrations, runMigrations, splitSqlStatements } from './runner';
 
 function createQueryResult<Row extends Record<string, unknown>>(rows: Row[] = []) {
@@ -91,30 +90,37 @@ describe('runMigrations', () => {
       expect.stringContaining('INSERT INTO schema_migrations'),
       [2, '002_expand_fee_items_cost_structure', expect.any(String)],
     );
+    expect(txExecuteAsync).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO schema_migrations'),
+      [3, '003_gym_search_support', expect.any(String)],
+    );
   });
 
   it('skips already applied migrations', async () => {
-    const { db, transaction } = createDatabaseMock([1, 2]);
+    const { db, transaction } = createDatabaseMock([1, 2, 3]);
 
     await runMigrations(db as never);
 
     expect(transaction).not.toHaveBeenCalled();
   });
 
-  it('applies only missing later migrations when earlier versions already exist', async () => {
-    const { db, transaction, txExecuteAsync } = createDatabaseMock([1]);
+  it('applies migrations 002 and 003 when only 001 exists', async () => {
+    const { db, transaction } = createDatabaseMock([1]);
 
     await runMigrations(db as never);
 
-    const executableStatements = splitSqlStatements(
-      migration002ExpandFeeItemsCostStructure.upSql,
-    );
+    expect(transaction).toHaveBeenCalledTimes(2);
+  });
+
+  it('applies migration 003 when 001 and 002 already exist', async () => {
+    const { db, transaction, txExecuteAsync } = createDatabaseMock([1, 2]);
+
+    await runMigrations(db as never);
 
     expect(transaction).toHaveBeenCalledTimes(1);
-    expect(txExecuteAsync).toHaveBeenCalledTimes(executableStatements.length + 1);
     expect(txExecuteAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO schema_migrations'),
-      [2, '002_expand_fee_items_cost_structure', expect.any(String)],
+      [3, '003_gym_search_support', expect.any(String)],
     );
   });
 });

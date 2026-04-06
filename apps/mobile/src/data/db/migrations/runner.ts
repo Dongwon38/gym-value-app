@@ -2,6 +2,7 @@ import type { NitroSQLiteConnection } from 'react-native-nitro-sqlite';
 
 import { migration001InitialSchema } from './001_initial_schema';
 import { migration002ExpandFeeItemsCostStructure } from './002_expand_fee_items_cost_structure';
+import { migration003GymSearchSupport } from './003_gym_search_support';
 
 export interface AppMigration {
   version: number;
@@ -24,6 +25,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 const appMigrations = [
   migration001InitialSchema,
   migration002ExpandFeeItemsCostStructure,
+  migration003GymSearchSupport,
 ] satisfies readonly AppMigration[];
 
 function logMigrationInfo(message: string) {

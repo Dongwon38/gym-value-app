@@ -38,6 +38,7 @@ export async function savePrimaryGym(
     longitude,
     name: values.name.trim(),
     radiusMeters: Math.round(radiusMeters),
+    searchSource: 'manual' as const,
     timezone: values.timezone.trim(),
   };
 
