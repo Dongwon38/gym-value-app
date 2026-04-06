@@ -1,20 +1,8 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  Keyboard,
-  Pressable,
-  ScrollView,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
-import { useDeviceLocation } from '../../location/useDeviceLocation';
+import { useGymSearchFlow, type GymSetupEditorTab } from '../hooks/useGymSearchFlow';
 import { useGymSetupForm } from '../hooks/useGymSetupForm';
-import { saveGymFromSearchResult } from '../useCases/saveGymFromSearchResult';
-import { searchGyms } from '../useCases/searchGyms';
-import type {
-  GymSearchResult,
-  SaveGymFromSearchInput,
-} from '../../../domain/gymSearch';
 import {
   BottomSheetFormShell,
   Button,
@@ -26,7 +14,6 @@ import {
   Text,
   TimezonePickerField,
 } from '../../../ui';
-import { getDeviceIanaTimeZone } from '../../../utils/getDeviceIanaTimeZone';
 
 function findFieldMessage(
   issues: Array<{ field: string; message: string }>,
@@ -43,66 +30,9 @@ function formatCoordinateLabel(latitude?: number, longitude?: number) {
   return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 }
 
-function buildSaveInputFromSearchResult(
-  result: GymSearchResult,
-  radiusMeters: number,
-  timezone: string,
-): SaveGymFromSearchInput {
-  return {
-    brandName: result.brandName ?? null,
-    city: result.city ?? null,
-    countryCode: result.countryCode ?? null,
-    existingGymId: result.gymId,
-    externalPlaceId: result.placeId ?? null,
-    formattedAddress: result.formattedAddress ?? null,
-    latitude: result.latitude,
-    longitude: result.longitude,
-    name: result.name,
-    postalCode: result.postalCode ?? null,
-    radiusMeters,
-    region: result.region ?? null,
-    searchSource:
-      result.source === 'google_places' ? 'google_places' : 'internal_seed',
-    timezone,
-  };
-}
-
-type SetupEditorTab = 'manual' | 'search';
-
 export function GymSetupSection() {
   const [editorVisible, setEditorVisible] = React.useState(false);
-  const [editorTab, setEditorTab] = React.useState<SetupEditorTab>('search');
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [searchResults, setSearchResults] = React.useState<GymSearchResult[]>(
-    [],
-  );
-  const [searchLoading, setSearchLoading] = React.useState(false);
-  const [searchMeta, setSearchMeta] = React.useState<{
-    fromPlacesCache: boolean;
-    placesLimitReached: boolean;
-    usedPlacesFallback: boolean;
-  } | null>(null);
-  const [queryUsedForLastSearch, setQueryUsedForLastSearch] =
-    React.useState('');
-  const [selectedResult, setSelectedResult] =
-    React.useState<GymSearchResult | null>(null);
-  const [confirmRadius, setConfirmRadius] = React.useState('150');
-  const [confirmTimezone, setConfirmTimezone] = React.useState(
-    getDeviceIanaTimeZone,
-  );
-  const [searchSaveError, setSearchSaveError] = React.useState<string | null>(
-    null,
-  );
-  const [searchSaving, setSearchSaving] = React.useState(false);
-  const [preferDeviceLocationForSearch, setPreferDeviceLocationForSearch] =
-    React.useState(false);
-
-  const {
-    clearDeviceCoords,
-    coords: deviceCoords,
-    isRefreshing: deviceLocationRefreshing,
-    refresh: refreshDeviceLocation,
-  } = useDeviceLocation();
+  const [editorTab, setEditorTab] = React.useState<GymSetupEditorTab>('search');
 
   const {
     errors,
@@ -119,114 +49,44 @@ export function GymSetupSection() {
     warnings,
   } = useGymSetupForm();
 
-  React.useEffect(() => {
-    if (!editorVisible) {
-      return;
-    }
-    setEditorTab('search');
-    setSearchQuery('');
-    setSearchResults([]);
-    setSearchMeta(null);
-    setSelectedResult(null);
-    setConfirmRadius('150');
-    setConfirmTimezone(getDeviceIanaTimeZone());
-    setSearchSaveError(null);
-    setQueryUsedForLastSearch('');
-    setPreferDeviceLocationForSearch(false);
-    clearDeviceCoords();
-  }, [clearDeviceCoords, editorVisible]);
-
-  const canRunSearch =
-    editorTab === 'search' &&
-    !selectedResult &&
-    searchQuery.trim().length >= 2 &&
-    !searchLoading;
-
-  async function executeGymSearch() {
-    if (searchLoading || selectedResult || editorTab !== 'search') {
-      return;
-    }
-
-    const q = searchQuery.trim();
-    if (q.length < 2) {
-      setSearchResults([]);
-      setSearchMeta(null);
-      return;
-    }
-
-    Keyboard.dismiss();
-    setSearchLoading(true);
-    try {
-      const useDeviceBias =
-        preferDeviceLocationForSearch &&
-        deviceCoords !== null &&
-        Number.isFinite(deviceCoords.latitude) &&
-        Number.isFinite(deviceCoords.longitude);
-
-      const out = await searchGyms({
-        query: q,
-        userLatitude: useDeviceBias
-          ? deviceCoords.latitude
-          : primaryGym?.latitude,
-        userLongitude: useDeviceBias
-          ? deviceCoords.longitude
-          : primaryGym?.longitude,
-      });
-      setSearchResults(out.results);
-      setSearchMeta({
-        fromPlacesCache: out.fromPlacesCache,
-        placesLimitReached: out.placesLimitReached,
-        usedPlacesFallback: out.usedPlacesFallback,
-      });
-      setQueryUsedForLastSearch(q);
-    } finally {
-      setSearchLoading(false);
-    }
-  }
+  const {
+    canRunSearch,
+    clearDeviceLocationBias,
+    clearSelectedResult,
+    confirmRadius,
+    confirmTimezone,
+    deviceCoords,
+    deviceLocationRefreshing,
+    executeGymSearch,
+    handleSearchSave,
+    preferDeviceLocationForSearch,
+    requestDeviceLocationBias,
+    searchLoading,
+    searchMeta,
+    searchQuery,
+    searchResults,
+    searchSaveError,
+    searchSaving,
+    selectedResult,
+    setConfirmRadius,
+    setConfirmTimezone,
+    setSearchQuery,
+    setSelectedResult,
+  } = useGymSearchFlow({
+    editorTab,
+    editorVisible,
+    onSaved: async () => {
+      await reload();
+      setEditorVisible(false);
+    },
+    primaryGym,
+  });
 
   async function handleManualSave() {
     const savedGym = await save();
 
     if (savedGym) {
       setEditorVisible(false);
-    }
-  }
-
-  async function handleSearchSave() {
-    if (!selectedResult) {
-      return;
-    }
-
-    const radius = Number.parseInt(confirmRadius.trim(), 10);
-    if (!Number.isFinite(radius) || radius < 30 || radius > 500) {
-      setSearchSaveError('Radius must be between 30 and 500 meters.');
-      return;
-    }
-
-    setSearchSaveError(null);
-    setSearchSaving(true);
-
-    try {
-      await saveGymFromSearchResult(
-        buildSaveInputFromSearchResult(
-          selectedResult,
-          radius,
-          confirmTimezone.trim(),
-        ),
-        {
-          query: queryUsedForLastSearch,
-          source:
-            selectedResult.source === 'google_places' ? 'places' : 'local',
-        },
-      );
-      await reload();
-      setEditorVisible(false);
-    } catch (e) {
-      setSearchSaveError(
-        e instanceof Error ? e.message : 'Could not save gym from search.',
-      );
-    } finally {
-      setSearchSaving(false);
     }
   }
 
@@ -297,8 +157,7 @@ export function GymSetupSection() {
                 className="flex-1"
                 label="Back"
                 onPress={() => {
-                  setSelectedResult(null);
-                  setSearchSaveError(null);
+                  clearSelectedResult();
                 }}
                 variant="secondary"
               />
@@ -406,9 +265,7 @@ export function GymSetupSection() {
                         : 'Use current location for search'
                     }
                     onPress={() => {
-                      refreshDeviceLocation().then(next => {
-                        setPreferDeviceLocationForSearch(next !== null);
-                      });
+                      void requestDeviceLocationBias();
                     }}
                     variant="secondary"
                   />
@@ -421,8 +278,7 @@ export function GymSetupSection() {
                       <Pressable
                         className="self-start py-1 active:opacity-70"
                         onPress={() => {
-                          clearDeviceCoords();
-                          setPreferDeviceLocationForSearch(false);
+                          clearDeviceLocationBias();
                         }}>
                         <Text variant="bodyMuted">
                           Use saved gym area instead
@@ -473,7 +329,6 @@ export function GymSetupSection() {
                       className="border-b border-border/60 py-3 active:opacity-70"
                       onPress={() => {
                         setSelectedResult(item);
-                        setSearchSaveError(null);
                       }}>
                       <Text variant="listTitle">{item.name}</Text>
                       {item.formattedAddress ? (
