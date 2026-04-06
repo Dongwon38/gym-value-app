@@ -1,6 +1,10 @@
 import type { Visit, VisitSource, VisitStatus } from '../../../domain/models';
 
-export type VisitPeriod = 'month' | 'year' | 'all';
+export type VisitPeriod = 'month' | 'year';
+export type VisitPeriodSelection = {
+  month: number;
+  year: number;
+};
 
 export type VisitHeatmapCell = {
   dateKey: string;
@@ -43,14 +47,6 @@ function endOfWeek(date: Date) {
   return addDays(startOfWeek(date), 6);
 }
 
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function endOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-}
-
 function toLocalDateKey(date: Date) {
   return `${date.getFullYear()}-${padDate(date.getMonth() + 1)}-${padDate(date.getDate())}`;
 }
@@ -72,8 +68,14 @@ function isSameMonth(date: Date, other: Date) {
   );
 }
 
-function isSameYear(date: Date, other: Date) {
-  return date.getFullYear() === other.getFullYear();
+function isInSelectionMonth(date: Date, selection: VisitPeriodSelection) {
+  return (
+    date.getFullYear() === selection.year && date.getMonth() === selection.month
+  );
+}
+
+function isInSelectionYear(date: Date, selection: VisitPeriodSelection) {
+  return date.getFullYear() === selection.year;
 }
 
 function getHeatmapLevel(visitCount: number): VisitHeatmapCell['level'] {
@@ -106,10 +108,8 @@ const visitStatusLabels: Record<VisitStatus, string> = {
 export function filterVisitsByPeriod(
   visits: Visit[],
   period: VisitPeriod,
-  now = new Date(),
+  selection: VisitPeriodSelection,
 ) {
-  const today = normalizeToLocalDate(now);
-
   return visits.filter(visit => {
     const startedAt = parseVisitStartedAt(visit);
 
@@ -120,14 +120,10 @@ export function filterVisitsByPeriod(
     const localStartedAt = normalizeToLocalDate(startedAt);
 
     if (period === 'month') {
-      return isSameMonth(localStartedAt, today);
+      return isInSelectionMonth(localStartedAt, selection);
     }
 
-    if (period === 'year') {
-      return isSameYear(localStartedAt, today);
-    }
-
-    return true;
+    return isInSelectionYear(localStartedAt, selection);
   });
 }
 
@@ -146,23 +142,22 @@ export function getCurrentMonthVisitCount(visits: Visit[], now = new Date()) {
 }
 
 export function formatVisitSummaryLine(
-  visits: Visit[],
   filteredVisits: Visit[],
   period: VisitPeriod,
-  now = new Date(),
+  selection: VisitPeriodSelection,
 ) {
+  const countLabel = `${filteredVisits.length} visit${filteredVisits.length === 1 ? '' : 's'}`;
+
   if (period === 'month') {
-    return `${filteredVisits.length} visit${filteredVisits.length === 1 ? '' : 's'} this month · ${filteredVisits.length} total shown`;
+    return `${countLabel} in ${formatVisitMonthYearLabel(selection.month, selection.year)} · ${filteredVisits.length} total shown`;
   }
 
-  const currentMonthVisitCount = getCurrentMonthVisitCount(visits, now);
-
-  return `${currentMonthVisitCount} visit${currentMonthVisitCount === 1 ? '' : 's'} this month · ${filteredVisits.length} total shown`;
+  return `${countLabel} in ${selection.year} · ${filteredVisits.length} total shown`;
 }
 
 export function buildVisitHeatmap(
   visits: Visit[],
-  period: VisitPeriod,
+  year: number,
   now = new Date(),
 ) {
   const today = normalizeToLocalDate(now);
@@ -179,29 +174,15 @@ export function buildVisitHeatmap(
     countsByDateKey.set(dateKey, (countsByDateKey.get(dateKey) ?? 0) + 1);
   });
 
-  let startDate: Date;
-  let endDate: Date;
-
-  if (period === 'month') {
-    startDate = startOfWeek(startOfMonth(today));
-    endDate = endOfWeek(endOfMonth(today));
-  } else {
-    endDate = endOfWeek(today);
-    startDate = addDays(startOfWeek(today), -7 * 15);
-  }
+  const startDate = startOfWeek(new Date(year, 0, 1));
+  const endDate = endOfWeek(new Date(year, 11, 31));
 
   const weeks: VisitHeatmapWeek[] = [];
   let cursor = startDate;
-  let previousWeekMonth: number | null = null;
+  let previousVisibleMonth: number | null = null;
 
   while (cursor.getTime() <= endDate.getTime()) {
     const weekStart = cursor;
-    const weekMonth = weekStart.getMonth();
-    const label =
-      previousWeekMonth === null || previousWeekMonth !== weekMonth
-        ? monthLabels[weekMonth]
-        : null;
-
     const days = Array.from({ length: 7 }, (_, dayIndex) => {
       const dayDate = addDays(weekStart, dayIndex);
       const dateKey = toLocalDateKey(dayDate);
@@ -209,15 +190,26 @@ export function buildVisitHeatmap(
 
       return {
         dateKey,
-        isFuture: dayDate.getTime() > today.getTime(),
-        isMuted: period === 'month' && !isSameMonth(dayDate, today),
+        isFuture: year === today.getFullYear() && dayDate.getTime() > today.getTime(),
+        isMuted: dayDate.getFullYear() !== year,
         level: getHeatmapLevel(visitCount),
         visitCount,
       } satisfies VisitHeatmapCell;
     });
 
+    const firstVisibleDay = days.find(day => day.dateKey.startsWith(`${year}-`));
+    const visibleMonth =
+      firstVisibleDay !== undefined
+        ? Number(firstVisibleDay.dateKey.slice(5, 7)) - 1
+        : null;
+    const label =
+      visibleMonth !== null &&
+      (previousVisibleMonth === null || previousVisibleMonth !== visibleMonth)
+        ? monthLabels[visibleMonth]
+        : null;
+
     weeks.push({ days, label });
-    previousWeekMonth = weekMonth;
+    previousVisibleMonth = visibleMonth ?? previousVisibleMonth;
     cursor = addDays(weekStart, 7);
   }
 
@@ -313,33 +305,62 @@ export function getVisitPeriodLabel(period: VisitPeriod) {
     return 'Month';
   }
 
-  if (period === 'year') {
-    return 'Year';
-  }
-
-  return 'All';
+  return 'Year';
 }
 
-export function getVisitPeriodEmptyTitle(period: VisitPeriod) {
-  if (period === 'month') {
-    return 'No visits this month';
-  }
-
-  if (period === 'year') {
-    return 'No visits this year';
-  }
-
-  return 'No visits saved yet';
+export function formatVisitMonthYearLabel(month: number, year: number) {
+  return `${monthLabels[month]} ${year}`;
 }
 
-export function getVisitPeriodEmptyBody(period: VisitPeriod) {
+export function formatVisitPickerLabel(
+  period: VisitPeriod,
+  selection: VisitPeriodSelection,
+) {
   if (period === 'month') {
-    return 'Try a wider range or add a new visit for the current month.';
+    return formatVisitMonthYearLabel(selection.month, selection.year);
   }
 
-  if (period === 'year') {
-    return 'Try the full history view or add a new visit for this year.';
+  return String(selection.year);
+}
+
+export function buildVisitYearOptions(
+  visits: Visit[],
+  selectedYear: number,
+  now = new Date(),
+) {
+  const years = new Set<number>([normalizeToLocalDate(now).getFullYear(), selectedYear]);
+
+  visits.forEach(visit => {
+    const startedAt = parseVisitStartedAt(visit);
+
+    if (!startedAt) {
+      return;
+    }
+
+    years.add(startedAt.getFullYear());
+  });
+
+  return Array.from(years).sort((left, right) => right - left);
+}
+
+export function getVisitPeriodEmptyTitle(
+  period: VisitPeriod,
+  selection: VisitPeriodSelection,
+) {
+  if (period === 'month') {
+    return `No visits in ${formatVisitMonthYearLabel(selection.month, selection.year)}`;
   }
 
-  return 'Create the first visit to start building your visit timeline.';
+  return `No visits in ${selection.year}`;
+}
+
+export function getVisitPeriodEmptyBody(
+  period: VisitPeriod,
+  selection: VisitPeriodSelection,
+) {
+  if (period === 'month') {
+    return `Try the full ${selection.year} view or add a visit for ${formatVisitMonthYearLabel(selection.month, selection.year)}.`;
+  }
+
+  return `Add a visit to start building the ${selection.year} timeline.`;
 }

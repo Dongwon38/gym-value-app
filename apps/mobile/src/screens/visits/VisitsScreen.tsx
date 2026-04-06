@@ -1,9 +1,9 @@
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { PencilLine, Plus } from 'lucide-react-native';
+import { Check, ChevronDown, PencilLine, Plus } from 'lucide-react-native';
 
 import type { MainTabParamList } from '../../app/navigation/navigationTypes';
 import type { Visit } from '../../domain/models';
@@ -13,19 +13,24 @@ import { useVisits } from '../../features/visits/hooks/useVisits';
 import { cancelVisit } from '../../features/visits/useCases/cancelVisit';
 import {
   buildVisitHeatmap,
+  buildVisitYearOptions,
   filterVisitsByPeriod,
   formatVisitDateBadge,
   formatVisitFeedMeta,
+  formatVisitPickerLabel,
   formatVisitSourceTypeLabel,
   formatVisitSummaryLine,
   formatVisitTimeRange,
   getVisitPeriodEmptyBody,
   getVisitPeriodEmptyTitle,
+  getVisitPeriodLabel,
   type VisitPeriod,
+  type VisitPeriodSelection,
 } from '../../features/visits/useCases/visitTimeline';
 import { shouldReviewActiveVisit } from '../../features/visits/useCases/sessionReview';
 import {
   Badge,
+  BottomSheetFormShell,
   Button,
   Card,
   EmptyState,
@@ -46,14 +51,33 @@ const periodOptions: Array<{
 }> = [
   { label: 'Month', value: 'month' },
   { label: 'Year', value: 'year' },
-  { label: 'All', value: 'all' },
 ];
 
+const monthPickerOptions = [
+  { label: 'Jan', value: 0 },
+  { label: 'Feb', value: 1 },
+  { label: 'Mar', value: 2 },
+  { label: 'Apr', value: 3 },
+  { label: 'May', value: 4 },
+  { label: 'Jun', value: 5 },
+  { label: 'Jul', value: 6 },
+  { label: 'Aug', value: 7 },
+  { label: 'Sep', value: 8 },
+  { label: 'Oct', value: 9 },
+  { label: 'Nov', value: 10 },
+  { label: 'Dec', value: 11 },
+] as const;
+
 export function VisitsScreen() {
+  const nowRef = React.useRef(new Date());
+  const now = nowRef.current;
   const isFocused = useIsFocused();
   const previousFocusRef = React.useRef<boolean | null>(null);
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [selectedPeriod, setSelectedPeriod] = React.useState<VisitPeriod>('year');
+  const [selectedMonth, setSelectedMonth] = React.useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = React.useState(now.getFullYear());
+  const [pickerVisible, setPickerVisible] = React.useState(false);
   const [cancelState, setCancelState] = React.useState<CancelState>('idle');
   const [feedback, setFeedback] = React.useState<{
     message: string;
@@ -80,6 +104,13 @@ export function VisitsScreen() {
     startCreate,
     startEdit,
   } = useVisitForm();
+  const periodSelection = React.useMemo<VisitPeriodSelection>(
+    () => ({
+      month: selectedMonth,
+      year: selectedYear,
+    }),
+    [selectedMonth, selectedYear],
+  );
 
   React.useEffect(() => {
     if (previousFocusRef.current === null) {
@@ -97,12 +128,20 @@ export function VisitsScreen() {
   }, [isFocused, reload, reloadContext]);
 
   const filteredVisits = React.useMemo(
-    () => filterVisitsByPeriod(visits, selectedPeriod),
-    [selectedPeriod, visits],
+    () => filterVisitsByPeriod(visits, selectedPeriod, periodSelection),
+    [periodSelection, selectedPeriod, visits],
   );
   const heatmap = React.useMemo(
-    () => buildVisitHeatmap(filteredVisits, selectedPeriod),
-    [filteredVisits, selectedPeriod],
+    () => buildVisitHeatmap(visits, selectedYear, now),
+    [now, selectedYear, visits],
+  );
+  const pickerLabel = React.useMemo(
+    () => formatVisitPickerLabel(selectedPeriod, periodSelection),
+    [periodSelection, selectedPeriod],
+  );
+  const yearOptions = React.useMemo(
+    () => buildVisitYearOptions(visits, selectedYear, now),
+    [now, selectedYear, visits],
   );
   const needsActiveVisitReview =
     activeVisit !== null ? shouldReviewActiveVisit(activeVisit) : false;
@@ -175,11 +214,27 @@ export function VisitsScreen() {
       {loadState === 'ready' ? (
         <>
           <Animated.View entering={FadeInDown.delay(20).duration(220)}>
-            <SegmentedControl
-              onChange={setSelectedPeriod}
-              options={periodOptions}
-              value={selectedPeriod}
-            />
+            <Row align="center" className="gap-3">
+              <View className="flex-1">
+                <SegmentedControl
+                  onChange={setSelectedPeriod}
+                  options={periodOptions}
+                  value={selectedPeriod}
+                />
+              </View>
+              <Pressable
+                className="min-h-11 flex-row items-center gap-1 rounded-full border border-border/70 bg-card px-4 active:opacity-90"
+                onPress={() => {
+                  setPickerVisible(true);
+                }}>
+                <Text variant="listMeta">{pickerLabel}</Text>
+                <ChevronDown
+                  color={appTheme.colors.iconMuted}
+                  size={16}
+                  strokeWidth={2.2}
+                />
+              </Pressable>
+            </Row>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(50).duration(220)}>
@@ -189,7 +244,7 @@ export function VisitsScreen() {
           </Animated.View>
 
           <Text className="-mt-1" tone="secondary" variant="bodyMuted">
-            {formatVisitSummaryLine(visits, filteredVisits, selectedPeriod)}
+            {formatVisitSummaryLine(filteredVisits, selectedPeriod, periodSelection)}
           </Text>
 
           {feedback ? (
@@ -234,18 +289,18 @@ export function VisitsScreen() {
 
           {visits.length > 0 && filteredVisits.length === 0 ? (
             <EmptyState
-              actionLabel={selectedPeriod === 'all' ? 'Add Visit' : 'Show All'}
-              body={getVisitPeriodEmptyBody(selectedPeriod)}
+              actionLabel={selectedPeriod === 'month' ? 'Show Year' : 'Add Visit'}
+              body={getVisitPeriodEmptyBody(selectedPeriod, periodSelection)}
               onActionPress={() => {
-                if (selectedPeriod === 'all') {
+                if (selectedPeriod === 'year') {
                   setFeedback(null);
                   startCreate();
                   return;
                 }
 
-                setSelectedPeriod('all');
+                setSelectedPeriod('year');
               }}
-              title={getVisitPeriodEmptyTitle(selectedPeriod)}
+              title={getVisitPeriodEmptyTitle(selectedPeriod, periodSelection)}
             />
           ) : null}
 
@@ -332,6 +387,66 @@ export function VisitsScreen() {
         visitSourceLabel={formatVisitSourceTypeLabel(editingVisit?.source ?? 'manual')}
         visible={editorMode !== 'closed'}
       />
+
+      <BottomSheetFormShell
+        onClose={() => {
+          setPickerVisible(false);
+        }}
+        subtitle={
+          selectedPeriod === 'month'
+            ? 'Pick the month for the visit list. The heatmap stays on the full year.'
+            : 'Pick the year for the heatmap and visit list.'
+        }
+        title={`Choose ${getVisitPeriodLabel(selectedPeriod)}`}
+        visible={pickerVisible}>
+        <View className="gap-2">
+          {selectedPeriod === 'month'
+            ? monthPickerOptions.map(option => {
+                const isSelected = option.value === selectedMonth;
+
+                return (
+                  <Pressable
+                    key={option.value}
+                    className="flex-row items-center justify-between rounded-xl border border-border/70 bg-card px-4 py-3 active:bg-muted-card"
+                    onPress={() => {
+                      setSelectedMonth(option.value);
+                      setPickerVisible(false);
+                    }}>
+                    <Text variant="body">{`${option.label} ${selectedYear}`}</Text>
+                    {isSelected ? (
+                      <Check
+                        color={appTheme.colors.success}
+                        size={16}
+                        strokeWidth={2.4}
+                      />
+                    ) : null}
+                  </Pressable>
+                );
+              })
+            : yearOptions.map(option => {
+                const isSelected = option === selectedYear;
+
+                return (
+                  <Pressable
+                    key={option}
+                    className="flex-row items-center justify-between rounded-xl border border-border/70 bg-card px-4 py-3 active:bg-muted-card"
+                    onPress={() => {
+                      setSelectedYear(option);
+                      setPickerVisible(false);
+                    }}>
+                    <Text variant="body">{String(option)}</Text>
+                    {isSelected ? (
+                      <Check
+                        color={appTheme.colors.success}
+                        size={16}
+                        strokeWidth={2.4}
+                      />
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+        </View>
+      </BottomSheetFormShell>
     </Screen>
   );
 }
@@ -341,41 +456,96 @@ function VisitHeatmap({
 }: {
   heatmap: ReturnType<typeof buildVisitHeatmap>;
 }) {
+  const monthMarkers = heatmap.weeks
+    .map((week, index) =>
+      week.label
+        ? {
+            key: `${week.label}_${index}`,
+            label: week.label,
+            left: index * (HEATMAP_CELL_SIZE + HEATMAP_CELL_GAP),
+          }
+        : null,
+    )
+    .filter((marker): marker is { key: string; label: string; left: number } => marker !== null);
+
+  const gridWidth =
+    heatmap.weeks.length * HEATMAP_CELL_SIZE +
+    Math.max(heatmap.weeks.length - 1, 0) * HEATMAP_CELL_GAP;
+
   return (
     <View className="gap-3">
-      <Row className="pl-6 pr-1">
-        {heatmap.weeks.map((week, index) => (
-          <View key={`${week.label ?? 'week'}_${index}`} className="flex-1 items-center">
-            <Text tone="tertiary" variant="listMeta">
-              {week.label ?? ' '}
-            </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} bounces={false}>
+        <View className="gap-3 pb-1">
+          <View
+            className="relative"
+            style={{
+              height: HEATMAP_MONTH_LABEL_HEIGHT,
+              marginLeft: HEATMAP_WEEKDAY_LABEL_WIDTH + HEATMAP_GRID_OFFSET,
+              width: gridWidth,
+            }}>
+            {monthMarkers.map(marker => (
+              <Text
+                key={marker.key}
+                numberOfLines={1}
+                style={[visitHeatmapStyles.monthLabel, { left: marker.left }]}
+                tone="tertiary"
+                variant="listMeta">
+                {marker.label}
+              </Text>
+            ))}
           </View>
-        ))}
-      </Row>
 
-      <Row align="end" className="gap-2">
-        <View className="gap-[6px] pb-[1px]">
-          {heatmap.weekdayLabels.map((label, index) => (
-            <Text key={`${label}_${index}`} tone="tertiary" variant="listMeta">
-              {label || ' '}
-            </Text>
-          ))}
-        </View>
-
-        <Row className="flex-1 gap-[6px]">
-          {heatmap.weeks.map((week, index) => (
-            <View key={`visit_week_${index}`} className="flex-1 gap-[6px]">
-              {week.days.map(day => (
+          <Row align="start" className="gap-2">
+            <View
+              className="pb-[1px]"
+              style={{
+                rowGap: HEATMAP_CELL_GAP,
+                width: HEATMAP_WEEKDAY_LABEL_WIDTH,
+              }}>
+              {heatmap.weekdayLabels.map((label, index) => (
                 <View
-                  key={day.dateKey}
-                  className="h-3.5 rounded-[4px] border"
-                  style={getHeatmapCellStyle(day)}
-                />
+                  key={`${label}_${index}`}
+                  style={visitHeatmapStyles.weekdayLabelRow}>
+                  <Text tone="tertiary" variant="listMeta">
+                    {label || ' '}
+                  </Text>
+                </View>
               ))}
             </View>
-          ))}
-        </Row>
-      </Row>
+
+            <Row
+              className="justify-start"
+              style={{
+                columnGap: HEATMAP_CELL_GAP,
+                paddingLeft: HEATMAP_GRID_OFFSET,
+                width: gridWidth + HEATMAP_GRID_OFFSET,
+              }}>
+              {heatmap.weeks.map((week, index) => (
+                <View
+                  key={`visit_week_${index}`}
+                  style={{
+                    rowGap: HEATMAP_CELL_GAP,
+                    width: HEATMAP_CELL_SIZE,
+                  }}>
+                  {week.days.map(day => (
+                    <View
+                      key={day.dateKey}
+                      className="rounded-[4px] border"
+                      style={[
+                        {
+                          height: HEATMAP_CELL_SIZE,
+                          width: HEATMAP_CELL_SIZE,
+                        },
+                        getHeatmapCellStyle(day),
+                      ]}
+                    />
+                  ))}
+                </View>
+              ))}
+            </Row>
+          </Row>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -423,3 +593,20 @@ function getHeatmapCellStyle(day: {
     opacity: day.isFuture || day.isMuted ? 0.42 : 1,
   };
 }
+
+const HEATMAP_CELL_SIZE = 12;
+const HEATMAP_CELL_GAP = 4;
+const HEATMAP_GRID_OFFSET = 2;
+const HEATMAP_MONTH_LABEL_HEIGHT = 16;
+const HEATMAP_WEEKDAY_LABEL_WIDTH = 14;
+
+const visitHeatmapStyles = {
+  monthLabel: {
+    position: 'absolute' as const,
+    top: 0,
+  },
+  weekdayLabelRow: {
+    height: HEATMAP_CELL_SIZE,
+    justifyContent: 'center' as const,
+  },
+};

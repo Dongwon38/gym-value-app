@@ -111,10 +111,12 @@ describe('VisitsScreen', () => {
 
     expect(JSON.stringify(renderer!.toJSON())).toContain('Month');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Year');
+    expect(JSON.stringify(renderer!.toJSON())).not.toContain('All');
     expect(JSON.stringify(renderer!.toJSON())).toContain('04/03');
     expect(JSON.stringify(renderer!.toJSON())).toContain('18:10 - 19:25');
     expect(JSON.stringify(renderer!.toJSON())).toContain('1 hr 15 min');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('1 visit this month');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('2026');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('1 visit in 2026');
   });
 
   it('renders the primary gym empty state when nothing can be added yet', async () => {

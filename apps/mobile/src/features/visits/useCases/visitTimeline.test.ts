@@ -1,8 +1,10 @@
 import type { Visit } from '../../../domain/models';
 import {
   buildVisitHeatmap,
+  buildVisitYearOptions,
   filterVisitsByPeriod,
   formatVisitFeedMeta,
+  formatVisitPickerLabel,
   formatVisitSummaryLine,
 } from './visitTimeline';
 
@@ -36,32 +38,47 @@ describe('visitTimeline', () => {
   ];
 
   it('filters visits for the current month and year', () => {
-    expect(filterVisitsByPeriod(visits, 'month', referenceDate)).toHaveLength(2);
-    expect(filterVisitsByPeriod(visits, 'year', referenceDate)).toHaveLength(3);
-    expect(filterVisitsByPeriod(visits, 'all', referenceDate)).toHaveLength(4);
+    expect(
+      filterVisitsByPeriod(visits, 'month', { month: 3, year: 2026 }),
+    ).toHaveLength(2);
+    expect(
+      filterVisitsByPeriod(visits, 'year', { month: 3, year: 2026 }),
+    ).toHaveLength(3);
   });
 
   it('builds a visit summary line from the selected range', () => {
-    const filteredVisits = filterVisitsByPeriod(visits, 'year', referenceDate);
+    const filteredVisits = filterVisitsByPeriod(visits, 'year', {
+      month: 3,
+      year: 2026,
+    });
 
-    expect(formatVisitSummaryLine(visits, filteredVisits, 'year', referenceDate)).toBe(
-      '2 visits this month · 3 total shown',
-    );
+    expect(
+      formatVisitSummaryLine(filteredVisits, 'year', { month: 3, year: 2026 }),
+    ).toBe('3 visits in 2026 · 3 total shown');
   });
 
-  it('builds a heatmap with visit levels for the selected range', () => {
-    const filteredVisits = filterVisitsByPeriod(visits, 'month', referenceDate);
-    const heatmap = buildVisitHeatmap(filteredVisits, 'month', referenceDate);
+  it('builds a full-year heatmap with visit levels for the selected year', () => {
+    const heatmap = buildVisitHeatmap(visits, 2026, referenceDate);
     const populatedCell = heatmap.weeks
       .flatMap(week => week.days)
       .find(cell => cell.dateKey === '2026-04-03');
+    const visibleLabels = heatmap.weeks
+      .map(week => week.label)
+      .filter((label): label is string => label !== null);
 
-    expect(heatmap.weeks.length).toBeGreaterThanOrEqual(5);
+    expect(heatmap.weeks.length).toBeGreaterThanOrEqual(52);
+    expect(visibleLabels[0]).toBe('Jan');
     expect(populatedCell).toMatchObject({
       dateKey: '2026-04-03',
       level: 1,
       visitCount: 1,
     });
+  });
+
+  it('formats picker labels and year options from local data', () => {
+    expect(formatVisitPickerLabel('month', { month: 3, year: 2026 })).toBe('Apr 2026');
+    expect(formatVisitPickerLabel('year', { month: 3, year: 2026 })).toBe('2026');
+    expect(buildVisitYearOptions(visits, 2026, referenceDate)).toEqual([2026, 2025]);
   });
 
   it('formats visit feed metadata with duration and source', () => {
