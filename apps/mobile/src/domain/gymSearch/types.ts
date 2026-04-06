@@ -1,4 +1,8 @@
-export type GymSearchResultSource = 'internal_db' | 'google_places';
+export type GymSearchResultSource =
+  | 'internal_db'
+  | 'google_places'
+  | 'places_text'
+  | 'places_nearby';
 
 export type GymSearchResult = {
   source: GymSearchResultSource;

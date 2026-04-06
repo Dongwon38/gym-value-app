@@ -34,6 +34,12 @@ export function GymSetupSection() {
   const [editorVisible, setEditorVisible] = React.useState(false);
   const [editorTab, setEditorTab] = React.useState<GymSetupEditorTab>('search');
 
+  React.useEffect(() => {
+    if (editorVisible) {
+      setEditorTab('search');
+    }
+  }, [editorVisible]);
+
   const {
     errors,
     formValues,
@@ -50,6 +56,8 @@ export function GymSetupSection() {
   } = useGymSetupForm();
 
   const {
+    autocompleteLoading,
+    autocompleteSuggestions,
     canRunSearch,
     clearDeviceLocationBias,
     clearSelectedResult,
@@ -59,6 +67,7 @@ export function GymSetupSection() {
     deviceLocationRefreshing,
     executeGymSearch,
     handleSearchSave,
+    nearbyLoading,
     preferDeviceLocationForSearch,
     requestDeviceLocationBias,
     searchLoading,
@@ -68,10 +77,11 @@ export function GymSetupSection() {
     searchSaveError,
     searchSaving,
     selectedResult,
+    selectSuggestion,
+    selectResult,
     setConfirmRadius,
     setConfirmTimezone,
     setSearchQuery,
-    setSelectedResult,
   } = useGymSearchFlow({
     editorTab,
     editorVisible,
@@ -89,6 +99,21 @@ export function GymSetupSection() {
       setEditorVisible(false);
     }
   }
+
+  const handleSearchSubmit = React.useCallback(() => {
+    executeGymSearch().catch(() => undefined);
+  }, [executeGymSearch]);
+
+  const handleUseCurrentLocation = React.useCallback(() => {
+    requestDeviceLocationBias().catch(() => undefined);
+  }, [requestDeviceLocationBias]);
+
+  const handleSuggestionPress = React.useCallback(
+    (suggestion: Parameters<typeof selectSuggestion>[0]) => {
+      selectSuggestion(suggestion).catch(() => undefined);
+    },
+    [selectSuggestion],
+  );
 
   if (loadState === 'loading') {
     return <Card description="Loading primary gym details." title="Gym" />;
@@ -243,9 +268,7 @@ export function GymSetupSection() {
                   editable={!searchLoading}
                   label="Search"
                   onChangeText={setSearchQuery}
-                  onSubmitEditing={() => {
-                    void executeGymSearch();
-                  }}
+                  onSubmitEditing={handleSearchSubmit}
                   placeholder="GoodLife Burnaby, Anytime Fitness…"
                   returnKeyType="search"
                   value={searchQuery}
@@ -255,6 +278,39 @@ export function GymSetupSection() {
                   typing. Without using current location or a saved gym, results may
                   follow your phone&apos;s region only.
                 </Text>
+                {!searchQuery.trim() ? (
+                  <Text tone="secondary" variant="bodyMuted">
+                    Nearby gyms appear here when a saved gym area or current
+                    location anchor is available.
+                  </Text>
+                ) : null}
+                {autocompleteLoading ? (
+                  <Row className="items-center gap-2 py-1">
+                    <ActivityIndicator size="small" />
+                    <Text variant="bodyMuted">Looking up suggestions…</Text>
+                  </Row>
+                ) : null}
+                {autocompleteSuggestions.length > 0 ? (
+                  <Card padding="compact" shadow="none" variant="quiet">
+                    <View className="gap-1">
+                      {autocompleteSuggestions.map(suggestion => (
+                        <Pressable
+                          key={suggestion.placeId}
+                          className="border-b border-border/60 py-3 last:border-b-0 active:opacity-70"
+                          onPress={() => {
+                            handleSuggestionPress(suggestion);
+                          }}>
+                          <Text variant="listTitle">{suggestion.mainText}</Text>
+                          {suggestion.secondaryText ? (
+                            <Text className="mt-1" variant="bodyMuted">
+                              {suggestion.secondaryText}
+                            </Text>
+                          ) : null}
+                        </Pressable>
+                      ))}
+                    </View>
+                  </Card>
+                ) : null}
                 <View className="gap-2">
                   <Button
                     className="self-stretch"
@@ -264,9 +320,7 @@ export function GymSetupSection() {
                         ? 'Getting location…'
                         : 'Use current location for search'
                     }
-                    onPress={() => {
-                      void requestDeviceLocationBias();
-                    }}
+                    onPress={handleUseCurrentLocation}
                     variant="secondary"
                   />
                   {preferDeviceLocationForSearch && deviceCoords ? (
@@ -291,14 +345,14 @@ export function GymSetupSection() {
                   className="self-stretch"
                   disabled={!canRunSearch}
                   label={searchLoading ? 'Searching…' : 'Search'}
-                  onPress={() => {
-                    void executeGymSearch();
-                  }}
+                  onPress={handleSearchSubmit}
                 />
-                {searchLoading ? (
+                {searchLoading || nearbyLoading ? (
                   <Row className="items-center gap-2 py-2">
                     <ActivityIndicator />
-                    <Text variant="bodyMuted">Searching…</Text>
+                    <Text variant="bodyMuted">
+                      {searchLoading ? 'Searching…' : 'Loading nearby gyms…'}
+                    </Text>
                   </Row>
                 ) : null}
                 {showPlacesLimitBanner ? (
@@ -309,7 +363,7 @@ export function GymSetupSection() {
                     variant="quiet">
                     <Text tone="warning" variant="bodyMuted">
                       Search limit reached for today. You can still enter your gym
-                      manually or pick a local match above.
+                      manually.
                     </Text>
                   </Card>
                 ) : null}
@@ -328,7 +382,7 @@ export function GymSetupSection() {
                       key={`${item.source}-${item.gymId ?? item.placeId ?? item.name}-${item.latitude}-${item.longitude}`}
                       className="border-b border-border/60 py-3 active:opacity-70"
                       onPress={() => {
-                        setSelectedResult(item);
+                        selectResult(item);
                       }}>
                       <Text variant="listTitle">{item.name}</Text>
                       {item.formattedAddress ? (

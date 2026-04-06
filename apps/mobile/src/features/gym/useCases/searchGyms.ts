@@ -92,11 +92,11 @@ export function buildPlacesSearchCacheKey(input: {
   return parts.join('|');
 }
 
-function orderResultsByAnchorDistance<T extends { latitude: number; longitude: number }>(
-  results: T[],
+function orderResultsByAnchorDistance(
+  results: SearchGymsUseCaseResult['results'],
   anchorLat?: number,
   anchorLng?: number,
-): T[] {
+): SearchGymsUseCaseResult['results'] {
   if (
     anchorLat === undefined ||
     anchorLng === undefined ||
