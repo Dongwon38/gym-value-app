@@ -1,15 +1,24 @@
 import React, { PropsWithChildren, useEffect, useState } from 'react';
-import { StatusBar } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { bootstrapDatabase } from '../../data/db';
-import { PlatformServicesProvider } from '../../platform/services';
+import {
+  PlatformServicesProvider,
+  createNativePlatformServices,
+  createNoopPlatformServices,
+} from '../../platform/services';
 import { ThemeProvider, appTheme } from '../../ui/theme';
 import { AssistedCheckInProvider } from './AssistedCheckInProvider';
 import {
   DatabaseBootstrapBoundary,
   type DatabaseBootstrapStatus,
 } from './DatabaseBootstrapBoundary';
+
+const devicePlatformServices =
+  Platform.OS === 'ios' || Platform.OS === 'android'
+    ? createNativePlatformServices()
+    : createNoopPlatformServices();
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [databaseBootstrapAttempt, setDatabaseBootstrapAttempt] = useState(0);
@@ -56,7 +65,7 @@ export function AppProviders({ children }: PropsWithChildren) {
 
   return (
     <SafeAreaProvider>
-      <PlatformServicesProvider>
+      <PlatformServicesProvider services={devicePlatformServices}>
         <ThemeProvider>
           <StatusBar
             backgroundColor={appTheme.colors.background}

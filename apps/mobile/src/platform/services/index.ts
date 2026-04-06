@@ -7,6 +7,7 @@ export {
   PlatformServicesProvider,
   usePlatformServices,
 } from './PlatformServicesProvider';
+export { createNativePlatformServices } from './createNativePlatformServices';
 export { createNoopPlatformServices } from './createNoopPlatformServices';
 export {
   createStubPlatformServices,
