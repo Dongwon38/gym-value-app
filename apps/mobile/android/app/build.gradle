@@ -13,6 +13,11 @@ react {
     codegenDir = file("../../../../node_modules/@react-native/codegen")
     cliFile = file("../../../../node_modules/react-native/cli.js")
 
+    /* Release bundle: Hermes compiler is under repo-root node_modules, not apps/mobile. */
+    def monorepoRootDir = file("${projectDir}/../../../../").canonicalFile
+    hermesCommand =
+        "${monorepoRootDir.absolutePath}/node_modules/hermes-compiler/hermesc/%OS-BIN%/hermesc"
+
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
     //   skip the bundling of the JS bundle and the assets. Default is "debug", "debugOptimized".
@@ -106,6 +111,8 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
