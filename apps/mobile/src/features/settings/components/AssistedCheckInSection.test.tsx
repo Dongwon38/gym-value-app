@@ -37,7 +37,7 @@ describe('AssistedCheckInSection', () => {
     });
 
     expect(JSON.stringify(renderer!.toJSON())).toContain('Assisted check-in');
-    expect(JSON.stringify(renderer!.toJSON())).toContain('Permissions');
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Device access');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Manual only');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Refresh');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Show Diagnostics');
@@ -66,9 +66,7 @@ describe('AssistedCheckInSection', () => {
       await Promise.resolve();
     });
 
-    expect(JSON.stringify(renderer!.toJSON())).toContain(
-      'Assisted check-in',
-    );
+    expect(JSON.stringify(renderer!.toJSON())).toContain('Assisted check-in');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Tracking');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Connected');
     expect(JSON.stringify(renderer!.toJSON())).toContain('Allowed');
