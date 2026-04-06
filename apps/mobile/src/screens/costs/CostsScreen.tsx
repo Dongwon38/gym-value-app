@@ -17,7 +17,6 @@ import { useCostItems } from '../../features/costs/hooks/useCostItems';
 import { useCostSetupForm } from '../../features/costs/hooks/useCostSetupForm';
 import { formatCostItemDateRange } from '../../features/costs/useCases/costItems';
 import {
-  getStarterCostPreset,
   starterCostPresetKeys,
 } from '../../features/costs/useCases/costSetup';
 import {
@@ -27,7 +26,6 @@ import {
   formatRecurringSummaryAmount,
 } from '../../features/costs/useCases/costSummary';
 import {
-  BottomSheetFormShell,
   Button,
   Card,
   EmptyState,
@@ -39,14 +37,14 @@ import {
 import { appTheme } from '../../ui/theme';
 
 type ActiveSheet =
-  | { kind: 'editor'; draftId: string }
-  | { kind: 'template-picker' }
+  | { draftId: string; kind: 'editor'; source: 'create' | 'edit' }
   | null;
 
 export function CostsScreen() {
   const isFocused = useIsFocused();
   const previousFocusRef = React.useRef<boolean | null>(null);
   const [activeSheet, setActiveSheet] = React.useState<ActiveSheet>(null);
+  const [createCustomDraftId, setCreateCustomDraftId] = React.useState<string | null>(null);
   const [showInactive, setShowInactive] = React.useState(false);
   const { costItems, inactiveCount, loadError, loadState, reload } =
     useCostItems();
@@ -120,6 +118,7 @@ export function CostsScreen() {
   );
 
   const closeEditor = React.useCallback(() => {
+    setCreateCustomDraftId(null);
     resetDraftState();
     setActiveSheet(null);
   }, [resetDraftState]);
@@ -129,15 +128,15 @@ export function CostsScreen() {
       const targetLine = allDraftLines.find(line => line.existingFeeItemId === feeItemId);
 
       if (targetLine) {
-        setActiveSheet({ draftId: targetLine.draftId, kind: 'editor' });
+        setActiveSheet({
+          draftId: targetLine.draftId,
+          kind: 'editor',
+          source: 'edit',
+        });
       }
     },
     [allDraftLines],
   );
-
-  const handleOpenTemplate = React.useCallback(() => {
-    setActiveSheet({ kind: 'template-picker' });
-  }, []);
 
   const handleSelectStarterTemplate = React.useCallback(
     (presetKey: (typeof starterCostPresetKeys)[number]) => {
@@ -147,20 +146,46 @@ export function CostsScreen() {
         return;
       }
 
-      setActiveSheet({ draftId, kind: 'editor' });
+      setActiveSheet({ draftId, kind: 'editor', source: 'create' });
     },
     [getStarterLineDraftId],
   );
 
   const handleSelectCustomTemplate = React.useCallback(() => {
+    if (createCustomDraftId) {
+      setActiveSheet({ draftId: createCustomDraftId, kind: 'editor', source: 'create' });
+      return;
+    }
+
     const draftId = addCustomLine();
-    setActiveSheet({ draftId, kind: 'editor' });
-  }, [addCustomLine]);
+    setCreateCustomDraftId(draftId);
+    setActiveSheet({ draftId, kind: 'editor', source: 'create' });
+  }, [addCustomLine, createCustomDraftId]);
+
+  const handleOpenTemplate = React.useCallback(() => {
+    const preferredStarterLine = starterLines.find(line => !line.existingFeeItemId);
+
+    setCreateCustomDraftId(null);
+
+    if (preferredStarterLine) {
+      setActiveSheet({
+        draftId: preferredStarterLine.draftId,
+        kind: 'editor',
+        source: 'create',
+      });
+      return;
+    }
+
+    const draftId = addCustomLine();
+    setCreateCustomDraftId(draftId);
+    setActiveSheet({ draftId, kind: 'editor', source: 'create' });
+  }, [addCustomLine, starterLines]);
 
   const handleSaveEditor = React.useCallback(async () => {
     const result = await save();
 
     if (result) {
+      setCreateCustomDraftId(null);
       setActiveSheet(null);
       resetDraftState();
     }
@@ -179,11 +204,34 @@ export function CostsScreen() {
 
     if (selectedDraftLine.kind === 'custom') {
       removeCustomLine(selectedDraftLine.draftId);
+
+      if (activeSheet?.source === 'create') {
+        const fallbackStarterLine = starterLines.find(line => !line.existingFeeItemId);
+
+        setCreateCustomDraftId(null);
+
+        if (fallbackStarterLine) {
+          setActiveSheet({
+            draftId: fallbackStarterLine.draftId,
+            kind: 'editor',
+            source: 'create',
+          });
+          return;
+        }
+      }
     }
 
     setActiveSheet(null);
     resetDraftState();
-  }, [deactivateLine, removeCustomLine, resetDraftState, selectedDraftLine]);
+    setCreateCustomDraftId(null);
+  }, [
+    activeSheet?.source,
+    deactivateLine,
+    removeCustomLine,
+    resetDraftState,
+    selectedDraftLine,
+    starterLines,
+  ]);
 
   const handleRestoreInactive = React.useCallback(
     (costItem: (typeof inactiveCostItems)[number]) => {
@@ -360,62 +408,17 @@ export function CostsScreen() {
         </>
       ) : null}
 
-      <BottomSheetFormShell
-        onClose={() => {
-          setActiveSheet(null);
-        }}
-        subtitle="Choose a starter cost line or create a custom one."
-        title="Add Cost"
-        visible={activeSheet?.kind === 'template-picker'}>
-        {starterCostPresetKeys.map(presetKey => {
-          const preset = getStarterCostPreset(presetKey);
-          const existingLine = starterLines.find(line => line.presetKey === presetKey);
-          const hasExistingRow = Boolean(existingLine?.existingFeeItemId);
-
-          return (
-            <Pressable
-              key={preset.key}
-              className="active:opacity-90"
-              onPress={() => {
-                handleSelectStarterTemplate(presetKey);
-              }}>
-              <Card padding="compact" shadow="soft">
-                <Row justify="between">
-                  <View className="flex-1 gap-0.5">
-                    <Text variant="listTitle">{preset.title}</Text>
-                    <Text tone="secondary" variant="listMeta">
-                      {preset.description}
-                    </Text>
-                  </View>
-                  <Text tone="success" variant="listMeta">
-                    {hasExistingRow ? 'Edit' : 'Use'}
-                  </Text>
-                </Row>
-              </Card>
-            </Pressable>
-          );
-        })}
-
-        <Pressable className="active:opacity-90" onPress={handleSelectCustomTemplate}>
-          <Card padding="compact" shadow="soft">
-            <Row justify="between">
-              <View className="flex-1 gap-0.5">
-                <Text variant="listTitle">Custom cost</Text>
-                <Text tone="secondary" variant="listMeta">
-                  Add a line that does not fit the default four templates.
-                </Text>
-              </View>
-              <Text tone="success" variant="listMeta">
-                Add
-              </Text>
-            </Row>
-          </Card>
-        </Pressable>
-      </BottomSheetFormShell>
-
       <CostEditorSheet
         appSettings={appSettings}
         line={selectedDraftLine}
+        onSelectKind={kind => {
+          if (kind === 'custom') {
+            handleSelectCustomTemplate();
+            return;
+          }
+
+          handleSelectStarterTemplate(kind);
+        }}
         onChangeField={(field, value) => {
           if (!selectedDraftLine) {
             return;
@@ -428,10 +431,11 @@ export function CostsScreen() {
         onSave={handleSaveEditor}
         saveFeedback={saveFeedback}
         saveState={saveState}
+        showKindSelector={activeSheet?.source === 'create'}
         validationErrors={
           selectedDraftLine ? validationErrorsByLine[selectedDraftLine.draftId] : undefined
         }
-        visible={activeSheet?.kind === 'editor'}
+        visible={Boolean(activeSheet && activeSheet.kind === 'editor')}
       />
     </Screen>
   );

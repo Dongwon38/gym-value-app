@@ -1,24 +1,26 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
+import { Check, ChevronDown } from 'lucide-react-native';
 
 import type { FeeItemFormValues } from '../../../domain/forms';
-import type { AppSettings, FeeItemCategory, FeeItemCadence } from '../../../domain/models';
+import type { AppSettings, FeeItemCadence } from '../../../domain/models';
 import type { ValidationIssue } from '../../../utils/validation';
 import {
   BottomSheetFormShell,
   Button,
-  Card,
   Input,
   Row,
-  SegmentedControl,
   Text,
 } from '../../../ui';
-import { formatCostItemCategory } from '../useCases/costItems';
+import { appTheme } from '../../../ui/theme';
 import {
   getStarterCostPreset,
   shouldShowBillingAnchorDate,
   type CostSetupLineDraft,
+  type StarterCostPresetKey,
 } from '../useCases/costSetup';
+
+type CostKind = StarterCostPresetKey | 'custom';
 
 type CostEditorSheetProps = {
   appSettings: Pick<
@@ -33,8 +35,10 @@ type CostEditorSheetProps = {
   onClose: () => void;
   onDelete: () => void;
   onSave: () => void;
+  onSelectKind: (kind: CostKind) => void;
   saveFeedback: string | null;
   saveState: 'idle' | 'saving' | 'success' | 'error';
+  showKindSelector?: boolean;
   validationErrors: ValidationIssue[] | undefined;
   visible: boolean;
 };
@@ -44,11 +48,26 @@ type Option<Value extends string> = {
   value: Value;
 };
 
+type DropdownFieldProps<Value extends string> = {
+  label: string;
+  onChange: (value: Value) => void;
+  options: Array<Option<Value>>;
+  value: Value;
+};
+
+const costKindOptions: Array<Option<CostKind>> = [
+  { label: 'Membership', value: 'membership' },
+  { label: 'Signup Fee', value: 'signup' },
+  { label: 'Annual Fee', value: 'annual' },
+  { label: 'Locker Fee', value: 'locker' },
+  { label: 'Custom', value: 'custom' },
+];
+
 const cadenceOptions: Option<Exclude<FeeItemCadence, 'custom'>>[] = [
   { label: 'Once', value: 'one_time' },
-  { label: '2wk', value: 'bi_weekly' },
-  { label: 'Month', value: 'monthly' },
-  { label: 'Year', value: 'annual' },
+  { label: 'Bi-weekly', value: 'bi_weekly' },
+  { label: 'Monthly', value: 'monthly' },
+  { label: 'Annual', value: 'annual' },
 ];
 
 const taxOptions: Option<FeeItemFormValues['amountInputMode']>[] = [
@@ -58,20 +77,81 @@ const taxOptions: Option<FeeItemFormValues['amountInputMode']>[] = [
   { label: 'Custom', value: 'custom' },
 ];
 
-const categoryOptions: Option<FeeItemCategory>[] = [
-  { label: 'Membership', value: 'monthly_membership' },
-  { label: 'Annual', value: 'annual_fee' },
-  { label: 'Signup', value: 'signup_fee' },
-  { label: 'Locker', value: 'locker_fee' },
-  { label: 'PT', value: 'pt' },
-  { label: 'Other', value: 'other' },
-];
-
 function getFieldError(
   errors: ValidationIssue[] | undefined,
   field: keyof FeeItemFormValues,
 ) {
   return errors?.find(issue => issue.field === field)?.message;
+}
+
+function getSelectedCostKind(line: CostSetupLineDraft): CostKind {
+  if (line.kind === 'custom') {
+    return 'custom';
+  }
+
+  return line.presetKey ?? 'custom';
+}
+
+function DropdownField<Value extends string>({
+  label,
+  onChange,
+  options,
+  value,
+}: DropdownFieldProps<Value>) {
+  const [open, setOpen] = React.useState(false);
+  const selectedOption =
+    options.find(option => option.value === value) ?? options[0] ?? null;
+
+  return (
+    <View className="gap-2">
+      <Text tone="secondary" variant="inputLabel">
+        {label}
+      </Text>
+      <View className="gap-2">
+        <Pressable
+          className="min-h-[52px] flex-row items-center justify-between rounded-lg border border-border/70 bg-input px-4 active:opacity-90"
+          onPress={() => {
+            setOpen(currentValue => !currentValue);
+          }}>
+          <Text variant="body">{selectedOption?.label ?? ''}</Text>
+          <ChevronDown
+            color={appTheme.colors.iconMuted}
+            size={18}
+            strokeWidth={2.2}
+          />
+        </Pressable>
+
+        {open ? (
+          <View className="overflow-hidden rounded-xl border border-border/70 bg-card">
+            {options.map(option => {
+              const isSelected = option.value === value;
+
+              return (
+                <Pressable
+                  key={option.value}
+                  className="flex-row items-center justify-between border-b border-border/60 px-4 py-3 last:border-b-0 active:bg-muted-card"
+                  onPress={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}>
+                  <Text className={isSelected ? 'text-foreground' : ''} variant="body">
+                    {option.label}
+                  </Text>
+                  {isSelected ? (
+                    <Check
+                      color={appTheme.colors.success}
+                      size={16}
+                      strokeWidth={2.4}
+                    />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
 }
 
 export function CostEditorSheet({
@@ -81,8 +161,10 @@ export function CostEditorSheet({
   onClose,
   onDelete,
   onSave,
+  onSelectKind,
   saveFeedback,
   saveState,
+  showKindSelector = false,
   validationErrors,
   visible,
 }: CostEditorSheetProps) {
@@ -90,11 +172,9 @@ export function CostEditorSheet({
     return null;
   }
 
+  const selectedCostKind = getSelectedCostKind(line);
   const presetTitle = line.presetKey ? getStarterCostPreset(line.presetKey).title : null;
-  const baseTitle = (presetTitle ?? line.formValues.label) || 'Cost';
-  const title = line.existingFeeItemId
-    ? `Edit ${baseTitle}`
-    : `Add ${presetTitle ?? 'Cost'}`;
+  const title = line.existingFeeItemId ? `Edit ${presetTitle ?? 'Cost'}` : 'Add Cost';
 
   return (
     <BottomSheetFormShell
@@ -110,11 +190,7 @@ export function CostEditorSheet({
         </Row>
       }
       onClose={onClose}
-      subtitle={
-        appSettings?.currency
-          ? `Default currency ${appSettings.currency}`
-          : 'Edit cost details'
-      }
+      subtitle={appSettings?.currency ? `Currency ${appSettings.currency}` : undefined}
       title={title}
       visible={visible}>
       {saveFeedback ? (
@@ -123,15 +199,54 @@ export function CostEditorSheet({
         </Text>
       ) : null}
 
-      <Input
-        errorText={getFieldError(validationErrors, 'label')}
-        label="Name"
-        onChangeText={value => {
-          onChangeField('label', value);
-        }}
-        placeholder={presetTitle ?? 'Monthly Membership'}
-        value={line.formValues.label}
-      />
+      {showKindSelector ? (
+        <View className="gap-2">
+          <Text tone="secondary" variant="inputLabel">
+            Cost type
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {costKindOptions.map(option => {
+              const isSelected = option.value === selectedCostKind;
+
+              return (
+                <Pressable
+                  key={option.value}
+                  className={`rounded-full border px-3 py-2 active:opacity-85 ${
+                    isSelected
+                      ? 'border-success/40 bg-success-soft'
+                      : 'border-border/70 bg-card'
+                  }`}
+                  onPress={() => {
+                    onSelectKind(option.value);
+                  }}>
+                  <Text tone={isSelected ? 'success' : 'secondary'} variant="listMeta">
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
+      {line.kind === 'custom' ? (
+        <Input
+          errorText={getFieldError(validationErrors, 'label')}
+          label="Name"
+          onChangeText={value => {
+            onChangeField('label', value);
+          }}
+          placeholder="Custom cost"
+          value={line.formValues.label}
+        />
+      ) : (
+        <View className="gap-1">
+          <Text tone="secondary" variant="inputLabel">
+            Name
+          </Text>
+          <Text variant="body">{presetTitle ?? line.formValues.label}</Text>
+        </View>
+      )}
 
       <Row align="start" className="gap-3">
         <View className="flex-1">
@@ -146,11 +261,9 @@ export function CostEditorSheet({
             value={line.formValues.amountPreTax}
           />
         </View>
-        <View className="flex-1 gap-2">
-          <Text tone="secondary" variant="inputLabel">
-            Cadence
-          </Text>
-          <SegmentedControl
+        <View className="flex-1">
+          <DropdownField
+            label="Cadence"
             onChange={value => {
               onChangeField('cadence', value);
             }}
@@ -163,61 +276,14 @@ export function CostEditorSheet({
         </View>
       </Row>
 
-      <View className="gap-2">
-        <Text tone="secondary" variant="inputLabel">
-          Tax
-        </Text>
-        <SegmentedControl
-          onChange={value => {
-            onChangeField('amountInputMode', value);
-          }}
-          options={taxOptions}
-          value={line.formValues.amountInputMode}
-        />
-      </View>
-
-      {line.kind === 'custom' ? (
-        <View className="gap-2">
-          <Text tone="secondary" variant="inputLabel">
-            Category
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {categoryOptions.map(option => {
-              const isSelected = option.value === line.formValues.category;
-
-              return (
-                <Pressable
-                  key={option.value}
-                  className={`rounded-full border px-3 py-2 active:opacity-85 ${
-                    isSelected
-                      ? 'border-success/40 bg-success-soft'
-                      : 'border-border/70 bg-card'
-                  }`}
-                  onPress={() => {
-                    onChangeField('category', option.value);
-                  }}>
-                  <Text tone={isSelected ? 'success' : 'secondary'} variant="listMeta">
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-      ) : (
-        <Card padding="compact" shadow="none" variant="muted">
-          <Row justify="between">
-            <Text tone="secondary" variant="bodyMuted">
-              Category
-            </Text>
-            <Text variant="body">
-              {formatCostItemCategory(
-                (line.formValues.category || 'other') as FeeItemCategory,
-              )}
-            </Text>
-          </Row>
-        </Card>
-      )}
+      <DropdownField
+        label="Tax"
+        onChange={value => {
+          onChangeField('amountInputMode', value);
+        }}
+        options={taxOptions}
+        value={line.formValues.amountInputMode}
+      />
 
       <Row align="start" className="gap-3">
         <View className="flex-1">
