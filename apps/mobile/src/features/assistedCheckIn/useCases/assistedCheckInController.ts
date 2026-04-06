@@ -141,25 +141,49 @@ export function createAssistedCheckInController(
     }
 
     if (trackingEnabled && input.gym) {
-      await dependencies.locationService.registerGymGeofence({
-        gymId: input.gym.id,
-        gymName: input.gym.name,
-        latitude: input.gym.latitude,
-        longitude: input.gym.longitude,
-        radiusMeters: input.gym.radiusMeters,
-      });
-      syncedGymId = input.gym.id;
+      try {
+        await dependencies.locationService.registerGymGeofence({
+          gymId: input.gym.id,
+          gymName: input.gym.name,
+          latitude: input.gym.latitude,
+          longitude: input.gym.longitude,
+          radiusMeters: input.gym.radiusMeters,
+        });
+        syncedGymId = input.gym.id;
 
-      updateSnapshot({
-        activeVisitId: currentVisit?.id ?? null,
-        backgroundLocationPermission: input.backgroundLocationPermission,
-        lastError: null,
-        locationPermission: input.locationPermission,
-        notificationPermission: input.notificationPermission,
-        primaryGymId: input.gym.id,
-        status: 'tracking',
-        trackingEnabled: true,
-      });
+        updateSnapshot({
+          activeVisitId: currentVisit?.id ?? null,
+          backgroundLocationPermission: input.backgroundLocationPermission,
+          lastError: null,
+          locationPermission: input.locationPermission,
+          notificationPermission: input.notificationPermission,
+          primaryGymId: input.gym.id,
+          status: 'tracking',
+          trackingEnabled: true,
+        });
+      } catch (error) {
+        syncedGymId = null;
+        try {
+          await dependencies.locationService.removeGymGeofence(input.gym.id);
+        } catch {
+          // ignore cleanup errors
+        }
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Could not register gym geofence. Check location (Always) and notification settings.';
+
+        updateSnapshot({
+          activeVisitId: currentVisit?.id ?? null,
+          backgroundLocationPermission: input.backgroundLocationPermission,
+          lastError: message,
+          locationPermission: input.locationPermission,
+          notificationPermission: input.notificationPermission,
+          primaryGymId: input.gym.id,
+          status: 'manual_only',
+          trackingEnabled: false,
+        });
+      }
 
       return;
     }
