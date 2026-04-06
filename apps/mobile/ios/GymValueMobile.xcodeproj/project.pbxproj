@@ -12,6 +12,9 @@
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		9BEA368B8908C389C1CA2193 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		A10E5FD12DA5567400665E01 /* GymGeofence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10E5FD22DA5567400665E02 /* GymGeofence.swift */; };
+		A10E5FD32DA5567400665E03 /* GymAssistedNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10E5FD42DA5567400665E04 /* GymAssistedNotifications.swift */; };
+		A10E5FD52DA5567400665E05 /* GymValueNativeBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = A10E5FD62DA5567400665E06 /* GymValueNativeBridge.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +27,9 @@
 		5DCACB8F33CDC322A6C60F78 /* libPods-GymValueMobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-GymValueMobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = GymValueMobile/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = GymValueMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		A10E5FD22DA5567400665E02 /* GymGeofence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GymGeofence.swift; path = GymValueMobile/GymGeofence.swift; sourceTree = "<group>"; };
+		A10E5FD42DA5567400665E04 /* GymAssistedNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GymAssistedNotifications.swift; path = GymValueMobile/GymAssistedNotifications.swift; sourceTree = "<group>"; };
+		A10E5FD62DA5567400665E06 /* GymValueNativeBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = GymValueNativeBridge.m; path = GymValueMobile/GymValueNativeBridge.m; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -44,6 +50,9 @@
 			children = (
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
+				A10E5FD22DA5567400665E02 /* GymGeofence.swift */,
+				A10E5FD42DA5567400665E04 /* GymAssistedNotifications.swift */,
+				A10E5FD62DA5567400665E06 /* GymValueNativeBridge.m */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
@@ -247,6 +256,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				A10E5FD12DA5567400665E01 /* GymGeofence.swift in Sources */,
+				A10E5FD32DA5567400665E03 /* GymAssistedNotifications.swift in Sources */,
+				A10E5FD52DA5567400665E05 /* GymValueNativeBridge.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
