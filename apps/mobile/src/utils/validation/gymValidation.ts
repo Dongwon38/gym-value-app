@@ -1,3 +1,5 @@
+import { getTimezoneOffset } from 'date-fns-tz';
+
 import type { GymFormValues } from '../../domain/forms';
 import { gymRadiusMetersLimits } from '../../domain/constants';
 
@@ -8,12 +10,12 @@ import type { ValidationIssue } from './types';
 export type GymFormField = keyof GymFormValues;
 
 function isValidTimezone(value: string) {
-  try {
-    Intl.DateTimeFormat('en-CA', { timeZone: value });
-    return true;
-  } catch {
+  const trimmed = value.trim();
+  if (!trimmed) {
     return false;
   }
+  const offsetMs = getTimezoneOffset(trimmed, new Date());
+  return Number.isFinite(offsetMs);
 }
 
 export function validateGymForm(values: GymFormValues) {
